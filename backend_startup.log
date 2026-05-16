@@ -1,0 +1,54 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.collincorp:house_rental >---------------------
+[INFO] Building house_rental 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.4.1:run (default-cli) > test-compile @ house_rental >>>
+[INFO] 
+[INFO] --- frontend:1.15.1:install-node-and-npm (install-node-and-npm) @ house_rental ---
+[INFO] Node v20.18.1 is already installed.
+[INFO] NPM 10.9.0 is already installed.
+[INFO] 
+[INFO] --- frontend:1.15.1:npm (npm-install) @ house_rental ---
+[INFO] Running 'npm install' in C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend
+[INFO] npm warn cleanup Failed to remove some directories [
+[INFO] npm warn cleanup   [
+[INFO] npm warn cleanup     'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\framer-motion',
+[INFO] npm warn cleanup     [Error: EPERM: operation not permitted, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\framer-motion\dist\es\render\components\m'] {
+[INFO] npm warn cleanup       errno: -4048,
+[INFO] npm warn cleanup       code: 'EPERM',
+[INFO] npm warn cleanup       syscall: 'rmdir',
+[INFO] npm warn cleanup       path: 'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\framer-motion\\dist\\es\\render\\components\\m'
+[INFO] npm warn cleanup     }
+[INFO] npm warn cleanup   ],
+[INFO] npm warn cleanup   [
+[INFO] npm warn cleanup     'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\sucrase',
+[INFO] npm warn cleanup     [Error: EPERM: operation not permitted, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\sucrase'] {
+[INFO] npm warn cleanup       errno: -4048,
+[INFO] npm warn cleanup       code: 'EPERM',
+[INFO] npm warn cleanup       syscall: 'rmdir',
+[INFO] npm warn cleanup       path: 'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\sucrase'
+[INFO] npm warn cleanup     }
+[INFO] npm warn cleanup   ]
+[INFO] npm warn cleanup ]
+[INFO] npm error code ENOTEMPTY
+[INFO] npm error syscall rmdir
+[INFO] npm error path C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\lucide-react\dist\esm\icons
+[INFO] npm error errno -4051
+[INFO] npm error ENOTEMPTY: directory not empty, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\lucide-react\dist\esm\icons'
+[INFO] npm error A complete log of this run can be found in: C:\Users\colli\AppData\Local\npm-cache\_logs\2026-05-15T15_47_17_185Z-debug-0.log
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:08 min
+[INFO] Finished at: 2026-05-15T18:48:51+03:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal com.github.eirslett:frontend-maven-plugin:1.15.1:npm (npm-install) on project house_rental: Failed to run task: 'npm install' failed. org.apache.commons.exec.ExecuteException: Process exited with an error: -4051 (Exit value: -4051) -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

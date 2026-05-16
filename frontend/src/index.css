@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    @apply antialiased font-sans bg-slate-50 text-slate-900 dark:bg-[#08091a] dark:text-slate-50;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 { @apply font-display font-bold tracking-tight; }
+
+  img { @apply block max-w-full; }
+}
+
+@layer components {
+
+  /* ── Layout ─────────────────────────────────────────── */
+  .section { @apply py-16 md:py-24; }
+
+  /* ── Cards ──────────────────────────────────────────── */
+  .card {
+    @apply bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-premium overflow-hidden;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl dark:bg-slate-900/80 rounded-3xl border border-white/30 dark:border-white/5 shadow-premium;
+  }
+
+  /* ── Inputs ─────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-800
+           border border-slate-200 dark:border-slate-700
+           text-slate-900 dark:text-white placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500
+           transition-all text-sm font-medium;
+  }
+
+  /* ── Buttons ────────────────────────────────────────── */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer whitespace-nowrap;
+  }
+
+  .btn-primary {
+    @apply btn-base px-6 py-3 bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20 hover:shadow-xl hover:shadow-primary-600/30;
+  }
+
+  .btn-secondary {
+    @apply btn-base px-6 py-3 bg-white text-slate-900 border border-slate-200 hover:bg-slate-50
+           dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:hover:bg-slate-700;
+  }
+
+  .btn-ghost {
+    @apply btn-base px-4 py-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800;
+  }
+
+  /* ── Badge ──────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest;
+  }
+
+  /* ── Nav link ───────────────────────────────────────── */
+  .nav-link {
+    @apply text-sm font-semibold text-slate-600 hover:text-primary-600
+           dark:text-slate-400 dark:hover:text-primary-400 transition-colors;
+  }
+
+  /* ── Property card ──────────────────────────────────── */
+  .property-card {
+    @apply bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-premium overflow-hidden flex flex-col hover:border-primary-400/40 hover:shadow-premium-hover transition-all duration-300;
+  }
+}
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply bg-slate-200 rounded-full dark:bg-slate-700; }
+::-webkit-scrollbar-thumb:hover { @apply bg-slate-300 dark:bg-slate-600; }
+
+/* ── Utilities ───────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

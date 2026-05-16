@@ -1,0 +1,3 @@
+package com.collincorp.houserental.dto;
+
+public record UserResponse(long id, String email, String fullName, String role) {}

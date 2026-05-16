@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: house_rental
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/house_rental}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:1234}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        default_batch_fetch_size: 32
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-production-use-a-long-random-secret-key}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  uploads:
+    dir: ${UPLOAD_DIR:${user.home}/house_rental_uploads}
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:dp2sofb5n}
+    api-key: ${CLOUDINARY_API_KEY:116679892943646}
+    api-secret: ${CLOUDINARY_API_SECRET:jEFtAjdjdbJ2QexABpJWW9h5U2Y}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: false

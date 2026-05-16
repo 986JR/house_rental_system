@@ -1,0 +1,18 @@
+spring:
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:houserental;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  jwt:
+    secret: test-secret-key-for-jwt-signing-only-32bytesmin
+    expiration-ms: 3600000
+  uploads:
+    dir: ${java.io.tmpdir}/house_rental_test_uploads
