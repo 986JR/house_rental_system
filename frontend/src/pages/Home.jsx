@@ -183,21 +183,7 @@ const Home = () => {
                   className="w-full aspect-[4/5] object-cover"
                 />
               </div>
-              <div className="absolute -top-5 -right-5 glass-card p-4 rounded-2xl animate-pulse-slow hidden sm:block">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Available Now</p>
-                </div>
-              </div>
-              <div className="absolute -bottom-5 -left-5 glass-card p-4 rounded-2xl hidden sm:block">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary-600 text-white text-sm font-bold flex items-center justify-center">4.9</div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">Top Rated</p>
-                    <p className="text-[10px] text-slate-400">1,200+ reviews</p>
-                  </div>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>

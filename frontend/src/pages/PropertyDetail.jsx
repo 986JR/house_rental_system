@@ -50,7 +50,7 @@ const PropertyDetail = () => {
     if (!user) { toast.error('Please log in to contact the landlord'); navigate('/login'); return; }
     setSending(true);
     try {
-      await axios.post('/messages', { recipientId: property.landlordId || 1, body: message });
+      await axios.post('/messages', { recipientId: property.landlordId, body: message });
       toast.success('Inquiry sent successfully!');
       setMessage('');
     } catch {

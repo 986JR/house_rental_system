@@ -33,7 +33,7 @@ app:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   uploads:
-    dir: ${UPLOAD_DIR:${user.home}/house_rental_uploads}
+    dir: ${UPLOADS_DIR:./house_rental_uploads}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME}
     api-key: ${CLOUDINARY_API_KEY}

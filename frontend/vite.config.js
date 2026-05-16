@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      outDir: '../backend/src/main/resources/static',
+      emptyOutDir: true,
+    },
     server: {
       port: parseInt(env.VITE_PORT) || 5173,
       proxy: {

@@ -115,10 +115,8 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
         {[
-          { label: 'Revenue Generated', value: '$12,450', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' },
           { label: 'Active Listings', value: data.properties.length, icon: Building2, color: 'text-primary-600', bg: 'bg-primary-600/10' },
           { label: 'Total Inquiries', value: data.bookings.length, icon: MessageSquare, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-          { label: 'Trust Rating', value: '4.9/5', icon: Star, color: 'text-amber-500', bg: 'bg-amber-500/10' },
         ].map((stat, i) => (
           <motion.div 
             key={i}
@@ -221,7 +219,7 @@ const Dashboard = () => {
                           <p className="font-bold text-slate-950 dark:text-white text-sm">{book.tenantEmail || book.landlordEmail}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Clock size={12} className="text-slate-400" />
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Received 2 hours ago</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Received {new Date(book.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
                       </div>
@@ -259,14 +257,10 @@ const Dashboard = () => {
                <h3 className="text-2xl font-bold text-slate-950 dark:text-white mb-1">{user.fullName}</h3>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-10">{user.role} Account</p>
                
-               <div className="grid grid-cols-2 gap-6 py-10 border-y border-slate-100 dark:border-slate-800 mb-10">
+               <div className="py-10 border-y border-slate-100 dark:border-slate-800 mb-10 text-center">
                  <div>
                    <p className="text-2xl font-bold text-slate-950 dark:text-white">{data.properties.length || 0}</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Managed</p>
-                 </div>
-                 <div className="border-l border-slate-100 dark:border-slate-800">
-                   <p className="text-2xl font-bold text-slate-950 dark:text-white">4.9</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score</p>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Managed Listings</p>
                  </div>
                </div>
                
