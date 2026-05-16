@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { mockProperties } from '../data/mockProperties';
+
 
 const Dashboard = () => {
   const { user, updateProfile } = useAuth();
@@ -39,25 +39,8 @@ const Dashboard = () => {
         setData({ properties: [], bookings: bookRes.data || [], messages: [] });
       }
     } catch (error) {
-      // Fallback to mock data for demonstration if backend is offline
-      if (user.role === 'landlord') {
-        setData({ 
-          properties: mockProperties.slice(0, 3), 
-          bookings: [
-            { id: 1, propertyId: 1, tenantEmail: 'sarah@example.com', message: 'Is this available for a tour tomorrow at 5 PM?', createdAt: new Date().toISOString() },
-            { id: 2, propertyId: 2, tenantEmail: 'mike@example.com', message: 'I love the garden! Are pets allowed?', createdAt: new Date().toISOString() }
-          ], 
-          messages: [] 
-        });
-      } else {
-        setData({ 
-          properties: [], 
-          bookings: [
-            { id: 1, propertyId: 1, landlordEmail: 'skyline@elite.com', message: 'Your inquiry for Skyline Penthouse is being reviewed.', status: 'pending' }
-          ], 
-          messages: [] 
-        });
-      }
+      // Fallback if backend is offline
+      setData({ properties: [], bookings: [], messages: [] });
     } finally {
       setTimeout(() => setLoading(false), 600);
     }

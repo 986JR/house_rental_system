@@ -53,14 +53,22 @@ house_rental/
 - PostgreSQL database
 
 ### Configuration
-Update the database connection details in `backend/src/main/resources/application.yaml`:
+Create a `.env` file in the root directory based on `.env.example` to configure the system:
 
-```yaml
-spring:
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/house_rental}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:1234}
+```env
+# Database
+DB_URL=jdbc:postgresql://localhost:5432/house_rental
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
+
+# JWT & Cloudinary
+JWT_SECRET=your_secret_key
+CLOUDINARY_CLOUD_NAME=your_name
+CLOUDINARY_API_KEY=your_key
+CLOUDINARY_API_SECRET=your_secret
+
+# Frontend
+VITE_API_URL=http://localhost:8080
 ```
 
 ### Installation & Deployment

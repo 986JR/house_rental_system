@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+.env
+*.local
+house_rental_uploads/
+.env

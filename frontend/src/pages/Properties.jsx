@@ -6,7 +6,7 @@ import {
   Loader2, ChevronRight, LayoutGrid, List as ListIcon, X, ChevronDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { mockProperties } from '../data/mockProperties';
+
 
 /* ── Skeleton ──────────────────────────────────────────────── */
 const Skeleton = () => (
@@ -149,9 +149,10 @@ const Properties = () => {
       const params = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== ''));
       const res = await axios.get('/properties', { params, timeout: 4000 });
       setProperties(res.data.content || []);
-    } catch {
-      // Backend offline — use local mock data with local filtering
-      setProperties(applyFilters(mockProperties, f));
+    } catch (err) {
+      // Backend offline
+      setProperties([]);
+      console.error(err);
     } finally {
       setTimeout(() => setLoading(false), 300);
     }

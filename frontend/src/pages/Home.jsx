@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Building2, ShieldCheck, ArrowRight, Star, CheckCircle2, Bed, MapPin, ChevronRight } from 'lucide-react';
+import { Search, Building2, ShieldCheck, ArrowRight, Star, CheckCircle2, Bed, MapPin, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getFeaturedProperties } from '../data/mockProperties';
+import axios from 'axios';
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } };
 const stagger = { show: { transition: { staggerChildren: 0.1 } } };
@@ -11,7 +12,7 @@ const FeaturedCard = ({ prop, index }) => (
     <Link to={`/properties/${prop.id}`} className="property-card group h-full block">
       <div className="relative h-56 overflow-hidden">
         <img
-          src={prop.images[0]?.filePath}
+          src={prop.images?.[0]?.filePath || 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&q=80&w=800'}
           alt={prop.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
@@ -22,7 +23,7 @@ const FeaturedCard = ({ prop, index }) => (
           </span>
         </div>
         <div className="absolute bottom-4 left-4 text-white">
-          <p className="text-2xl font-extrabold">${prop.pricePerMonth.toLocaleString()}</p>
+          <p className="text-2xl font-extrabold">${prop.pricePerMonth?.toLocaleString()}</p>
           <p className="text-xs opacity-80 font-medium">per month</p>
         </div>
       </div>
@@ -47,7 +48,15 @@ const FeaturedCard = ({ prop, index }) => (
 );
 
 const Home = () => {
-  const featured = getFeaturedProperties();
+  const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios.get('/properties?availability=available')
+      .then(res => setFeatured((res.data.content || []).slice(0, 3)))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="overflow-x-hidden">

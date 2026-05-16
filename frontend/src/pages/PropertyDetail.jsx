@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { mockProperties } from '../data/mockProperties';
 
 const AMENITIES = [
   { icon: Wifi,         label: 'High-Speed Fiber' },
@@ -38,9 +37,7 @@ const PropertyDetail = () => {
         const res = await axios.get(`/properties/${id}`, { timeout: 4000 });
         setProperty(res.data);
       } catch {
-        const mock = mockProperties.find(p => p.id === Number(id));
-        if (mock) setProperty(mock);
-        else { toast.error('Property not found'); navigate('/properties'); }
+        toast.error('Property not found'); navigate('/properties');
       } finally {
         setTimeout(() => setLoading(false), 300);
       }

@@ -62,3 +62,4 @@ CREATE TABLE messages (
 
 CREATE INDEX idx_messages_sender ON messages (sender_id);
 CREATE INDEX idx_messages_recipient ON messages (recipient_id);
+

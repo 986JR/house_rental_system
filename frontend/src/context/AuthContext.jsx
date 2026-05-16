@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Configure axios defaults
-  axios.defaults.baseURL = '/api/v1';
+  axios.defaults.baseURL = import.meta.env.VITE_API_PATH_PREFIX || '/api/v1';
   const token = localStorage.getItem('token');
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

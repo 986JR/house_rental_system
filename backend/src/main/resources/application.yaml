@@ -27,15 +27,17 @@ server:
   port: ${SERVER_PORT:8080}
 
 app:
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   jwt:
-    secret: ${JWT_SECRET:change-me-in-production-use-a-long-random-secret-key}
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   uploads:
     dir: ${UPLOAD_DIR:${user.home}/house_rental_uploads}
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:dp2sofb5n}
-    api-key: ${CLOUDINARY_API_KEY:116679892943646}
-    api-secret: ${CLOUDINARY_API_SECRET:jEFtAjdjdbJ2QexABpJWW9h5U2Y}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
 
 ---
 spring:
