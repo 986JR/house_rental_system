@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/house_rental}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:1234}
+    password: ${DB_PASSWORD:2050a}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
@@ -30,14 +30,14 @@ app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:6e6082f88351504749d1537f7d10b9ee51018f33bb1e0a58c0ad768490784112}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   uploads:
     dir: ${UPLOADS_DIR:./house_rental_uploads}
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME}
-    api-key: ${CLOUDINARY_API_KEY}
-    api-secret: ${CLOUDINARY_API_SECRET}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-storage-bucket}
+    api-key: ${CLOUDINARY_API_KEY:839482175928471}
+    api-secret: ${CLOUDINARY_API_SECRET:aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0u}
 
 ---
 spring:

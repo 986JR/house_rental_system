@@ -148,7 +148,7 @@ const Properties = () => {
     try {
       const params = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== ''));
       const res = await axios.get('/properties', { params, timeout: 4000 });
-      setProperties(res.data.content || []);
+      setProperties(res.data.content || res.data || []);
     } catch (err) {
       // Backend offline
       setProperties([]);

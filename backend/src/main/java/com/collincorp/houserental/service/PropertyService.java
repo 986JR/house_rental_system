@@ -43,6 +43,8 @@ public class PropertyService {
             Integer minRooms,
             PropertyAvailability availability,
             Pageable pageable) {
+
+        //creating dynamic queries in the database instead of having messy jpa raw queries
         Specification<PropertyEntity> spec = buildSpec(location, maxPrice, minRooms, availability);
         return propertyRepository.findAll(spec, pageable).map(this::toResponse);
     }

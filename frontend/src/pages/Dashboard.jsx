@@ -27,7 +27,7 @@ const Dashboard = () => {
     try {
       if (user.role === 'admin') {
         const propRes = await axios.get('/properties');
-        setData({ properties: propRes.data.content || [], bookings: [], messages: [] });
+        setData({ properties: propRes.data.content || propRes.data || [], bookings: [], messages: [] });
       } else if (user.role === 'landlord') {
         const [propRes, bookRes] = await Promise.all([
           axios.get('/properties/my'),
