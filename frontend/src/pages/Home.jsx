@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Building2, ShieldCheck, ArrowRight, Star, CheckCircle2, Bed, MapPin, ChevronRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import background from '../assets/background.webm';
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } };
 const stagger = { show: { transition: { staggerChildren: 0.1 } } };
@@ -53,7 +54,10 @@ const Home = () => {
 
   useEffect(() => {
     axios.get('/properties?availability=available')
-      .then(res => setFeatured((res.data.content || []).slice(0, 3)))
+      .then(res => {
+        const data = res.data.content || res.data || [];
+        setFeatured(data.slice(0, 3));
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
@@ -62,91 +66,74 @@ const Home = () => {
     <div className="overflow-x-hidden">
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative pt-16 pb-32 md:pt-28 md:pb-48 overflow-hidden">
-        {/* BG blobs */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full bg-primary-400/20 blur-[120px]" />
-          <div className="absolute bottom-[0%] right-[-10%] w-[45%] h-[45%] rounded-full bg-blue-400/20 blur-[120px]" />
+      <section className="relative h-[75vh] overflow-hidden">
+
+        {/* BACKGROUND */}
+        <div className="absolute inset-0">
+          <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+          >
+            <source src={background} type="video/webm" />
+          </video>
         </div>
 
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center flex flex-col items-center gap-6 mb-16">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400"
-            >
-              <Star size={13} className="text-amber-400 fill-amber-400" /> Trusted by 10,000+ Renters Worldwide
-            </motion.div>
+        {/* OVERLAY (critical for premium look) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 }}
-              className="text-5xl sm:text-6xl lg:text-7xl font-display font-extrabold leading-[1.05] text-slate-950 dark:text-white"
-            >
-              The Smarter Way to{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-blue-500">
-                Find Home.
-              </span>
-            </motion.h1>
+        {/* CONTENT */}
+        <div className="relative z-20 container h-full flex flex-col justify-center items-center text-center">
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.16 }}
-              className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl"
-            >
-              Discover verified premium properties. Connect directly with landlords. Move in with confidence.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.24 }}
-              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
-            >
-              <Link to="/properties" className="btn-primary !px-10 !py-4 text-base sm:text-lg w-full sm:w-auto justify-center">
-                Browse Properties <ArrowRight size={20} />
-              </Link>
-              <Link to="/register" className="btn-secondary !px-10 !py-4 text-base sm:text-lg w-full sm:w-auto justify-center">
-                List Your Property
-              </Link>
-            </motion.div>
+          {/* badge */}
+          <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-xs">
+            <Star size={13} className="text-amber-400 fill-amber-400" />
+            Trusted by 10,000+ Renters
           </div>
 
-          {/* Hero image with stats */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="relative"
-          >
-            <div className="rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10">
-              <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=2000"
-                alt="Luxury Home"
-                className="w-full aspect-[16/7] sm:aspect-[21/9] object-cover"
-              />
-            </div>
+          {/* title */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-tight">
+            The Smarter Way to <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-blue-400">
+        Find Home.
+      </span>
+          </h1>
 
-            {/* Floating stats bar */}
-            <div className="absolute -bottom-8 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-max">
-              <div className="glass-card px-8 py-5 flex flex-wrap justify-center sm:justify-start gap-8 sm:gap-12">
-                {[
-                  { v: '1,200+', l: 'Active Listings' },
-                  { v: '8.5k',  l: 'Happy Tenants'   },
-                  { v: '450+',  l: 'Verified Owners'  },
-                ].map(s => (
-                  <div key={s.l} className="text-center">
-                    <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">{s.v}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{s.l}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+          {/* subtitle */}
+          <p className="mt-6 text-white/80 max-w-xl text-lg">
+            Discover verified premium properties. Connect directly with landlords.
+          </p>
+
+          {/* buttons */}
+          <div className="mt-8 flex gap-4">
+            <Link to="/properties" className="bg-white text-black px-8 py-3 rounded-xl font-bold">
+              Browse Properties
+            </Link>
+            <Link to="/properties/new" className="border border-white/30 text-white px-8 py-3 rounded-xl">
+              List Property
+            </Link>
+          </div>
+
         </div>
+
+        {/* FLOATING STATS */}
+        <div className="absolute z-30 bottom-8 left-1/2 -translate-x-1/2">
+          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-8 py-5 flex gap-10 text-white">
+            {[
+              { v: "1,200+", l: "Active Listings" },
+              { v: "8.5k", l: "Happy Tenants" },
+              { v: "450+", l: "Verified Owners" }
+            ].map(s => (
+                <div key={s.l} className="text-center">
+                  <div className="text-2xl font-bold">{s.v}</div>
+                  <div className="text-xs text-white/60 uppercase">{s.l}</div>
+                </div>
+            ))}
+          </div>
+        </div>
+
       </section>
 
       {/* ── Features ─────────────────────────────────────── */}
@@ -178,9 +165,9 @@ const Home = () => {
             <div className="relative">
               <div className="rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1600607687940-4e7a6a953c1b?auto=format&fit=crop&q=80&w=1200"
+                  src="https://i.pinimg.com/1200x/5e/d8/15/5ed8155fc6fe355d7148261f1e9d37cf.jpg"
                   alt="Interior"
-                  className="w-full aspect-[4/5] object-cover"
+                  className="w-full object-cover"
                 />
               </div>
 
@@ -207,9 +194,10 @@ const Home = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.15 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
             {featured.map((prop, i) => <FeaturedCard key={prop.id} prop={prop} index={i} />)}
+
           </motion.div>
         </div>
       </section>

@@ -2,9 +2,9 @@
 INSERT INTO users (email, password_hash, role, full_name, active) VALUES
 ('admin@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'admin', 'Admin User', true),
 ('landlord@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'landlord', 'Landlord One', true),
-('landlord2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'landlord Two', true),
+('landlord2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'landlord','Landlord Two', true),
 ('tenant@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'tenant', 'Tenant One', true),
-('tenant2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'tenant Two', true);
+('tenant2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'tenant','Tenant Two', true);
 
 -- Seed Properties
 -- Assuming IDs 1 to 5 for users above
