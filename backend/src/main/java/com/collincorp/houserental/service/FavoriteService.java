@@ -20,10 +20,12 @@ public class FavoriteService {
 
     private final FavoriteRepository favoriteRepository;
     private final PropertyRepository propertyRepository;
+    private final BookingService bookingService;
 
-    public FavoriteService(FavoriteRepository favoriteRepository, PropertyRepository propertyRepository) {
+    public FavoriteService(FavoriteRepository favoriteRepository, PropertyRepository propertyRepository, BookingService bookingService) {
         this.favoriteRepository = favoriteRepository;
         this.propertyRepository = propertyRepository;
+        this.bookingService = bookingService;
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +68,7 @@ public class FavoriteService {
         var imgs = p.getImages().stream()
                 .map(i -> new com.collincorp.houserental.dto.PropertyImageResponse(i.getId(), i.getFilePath()))
                 .toList();
+        long bookingCount = bookingService.countByProperty(p.getId());
         return new PropertyResponse(
                 p.getId(),
                 p.getLandlord().getId(),
@@ -77,6 +80,9 @@ public class FavoriteService {
                 p.getRooms(),
                 p.getAvailability().name(),
                 p.getCreatedAt(),
-                imgs);
+                imgs,
+                p.getPhone(),
+                p.getContactEmail(),
+                bookingCount);
     }
 }

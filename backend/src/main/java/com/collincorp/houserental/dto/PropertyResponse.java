@@ -15,4 +15,7 @@ public record PropertyResponse(
         int rooms,
         String availability,
         Instant createdAt,
-        List<PropertyImageResponse> images) {}
+        List<PropertyImageResponse> images,
+        String phone,
+        String contactEmail,
+        long bookingCount) {}

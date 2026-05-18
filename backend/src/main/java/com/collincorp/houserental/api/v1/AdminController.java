@@ -2,8 +2,12 @@ package com.collincorp.houserental.api.v1;
 
 import com.collincorp.houserental.dto.AdminStatsResponse;
 import com.collincorp.houserental.dto.AdminUserPatchRequest;
+import com.collincorp.houserental.dto.BookingResponse;
 import com.collincorp.houserental.dto.UserResponse;
+import com.collincorp.houserental.entity.SystemLogEntity;
 import com.collincorp.houserental.service.AdminService;
+import com.collincorp.houserental.service.BookingService;
+import com.collincorp.houserental.service.LogService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,9 +24,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
+    private final BookingService bookingService;
+    private final LogService logService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, BookingService bookingService, LogService logService) {
         this.adminService = adminService;
+        this.bookingService = bookingService;
+        this.logService = logService;
     }
 
     @GetMapping("/users")
@@ -42,5 +51,18 @@ public class AdminController {
     @GetMapping("/stats")
     public AdminStatsResponse stats() {
         return adminService.stats();
+    }
+
+    @GetMapping("/bookings")
+    public List<BookingResponse> allBookings() {
+        return bookingService.listAll();
+    }
+
+    @GetMapping("/logs")
+    public List<SystemLogEntity> logs(@RequestParam(required = false) Integer days) {
+        if (days != null && days > 0) {
+            return logService.getRecentLogs(days);
+        }
+        return logService.getAllLogs();
     }
 }

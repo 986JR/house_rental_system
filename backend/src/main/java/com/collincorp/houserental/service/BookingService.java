@@ -2,6 +2,8 @@ package com.collincorp.houserental.service;
 
 import com.collincorp.houserental.api.ApiException;
 import com.collincorp.houserental.domain.BookingStatus;
+import com.collincorp.houserental.domain.LogAction;
+import com.collincorp.houserental.domain.PropertyAvailability;
 import com.collincorp.houserental.domain.UserRole;
 import com.collincorp.houserental.dto.BookingCreateRequest;
 import com.collincorp.houserental.dto.BookingResponse;
@@ -22,16 +24,40 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final PropertyRepository propertyRepository;
+    private final LogService logService;
 
-    public BookingService(BookingRepository bookingRepository, PropertyRepository propertyRepository) {
+    public BookingService(BookingRepository bookingRepository, PropertyRepository propertyRepository, LogService logService) {
         this.bookingRepository = bookingRepository;
         this.propertyRepository = propertyRepository;
+        this.logService = logService;
     }
 
     @Transactional(readOnly = true)
     public List<BookingResponse> listMine() {
         UserEntity u = SecurityUtils.currentUser();
         return bookingRepository.findAllForUser(u.getId()).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> listMyBookings() {
+        UserEntity u = SecurityUtils.currentUser();
+        return bookingRepository.findAllForTenant(u.getId()).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> listLandlordBookings() {
+        UserEntity u = SecurityUtils.currentUser();
+        return bookingRepository.findAllForLandlord(u.getId()).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> listAll() {
+        return bookingRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long countByProperty(Long propertyId) {
+        return bookingRepository.countByPropertyId(propertyId);
     }
 
     @Transactional
@@ -53,7 +79,10 @@ public class BookingService {
         b.setEndDate(req.endDate());
         b.setMessage(req.message());
         b.setStatus(BookingStatus.pending);
-        return toResponse(bookingRepository.save(b));
+        BookingEntity saved = bookingRepository.save(b);
+        logService.log(LogAction.BOOKING_CREATED, "booking", saved.getId(), 
+                "Property: " + property.getTitle() + ", Tenant: " + tenant.getEmail());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -68,7 +97,30 @@ public class BookingService {
         if (!landlord && !admin) {
             throw new ApiException(HttpStatus.FORBIDDEN, "landlord_only");
         }
+        
+        BookingStatus oldStatus = b.getStatus();
         b.setStatus(req.status());
+        
+        // Auto-update property availability based on booking status
+        if (req.status() == BookingStatus.approved && oldStatus != BookingStatus.approved) {
+            p.setAvailability(PropertyAvailability.rented);
+            propertyRepository.save(p);
+            logService.log(LogAction.BOOKING_APPROVED, "booking", b.getId(), 
+                    "Property: " + p.getTitle() + " marked as rented");
+            logService.log(LogAction.PROPERTY_STATUS_CHANGED, "property", p.getId(), 
+                    "Status changed to: rented");
+        } else if (req.status() == BookingStatus.rejected && oldStatus != BookingStatus.rejected) {
+            logService.log(LogAction.BOOKING_REJECTED, "booking", b.getId(), 
+                    "Property: " + p.getTitle());
+        } else if (req.status() == BookingStatus.cancelled && oldStatus != BookingStatus.cancelled) {
+            p.setAvailability(PropertyAvailability.available);
+            propertyRepository.save(p);
+            logService.log(LogAction.BOOKING_CANCELLED, "booking", b.getId(), 
+                    "Property: " + p.getTitle() + " marked as available again");
+            logService.log(LogAction.PROPERTY_STATUS_CHANGED, "property", p.getId(), 
+                    "Status changed to: available");
+        }
+        
         return toResponse(bookingRepository.save(b));
     }
 

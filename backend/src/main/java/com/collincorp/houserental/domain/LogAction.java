@@ -1,0 +1,18 @@
+package com.collincorp.houserental.domain;
+
+public enum LogAction {
+    USER_CREATED,
+    USER_UPDATED,
+    USER_DELETED,
+    PROPERTY_CREATED,
+    PROPERTY_UPDATED,
+    PROPERTY_DELETED,
+    BOOKING_CREATED,
+    BOOKING_APPROVED,
+    BOOKING_REJECTED,
+    BOOKING_CANCELLED,
+    LOGIN,
+    LOGOUT,
+    IMAGE_UPLOADED,
+    PROPERTY_STATUS_CHANGED
+}

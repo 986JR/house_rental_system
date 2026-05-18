@@ -30,10 +30,20 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final StorageService storageService;
+    private final BookingService bookingService;
 
-    public PropertyService(PropertyRepository propertyRepository, StorageService storageService) {
+    public PropertyService(PropertyRepository propertyRepository, StorageService storageService, BookingService bookingService) {
         this.propertyRepository = propertyRepository;
         this.storageService = storageService;
+        this.bookingService = bookingService;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PropertyResponse> listMine() {
+        UserEntity u = SecurityUtils.currentUser();
+        return propertyRepository.findAllByLandlordIdOrderByIdDesc(u.getId()).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -44,7 +54,6 @@ public class PropertyService {
             PropertyAvailability availability,
             Pageable pageable) {
 
-        //creating dynamic queries in the database instead of having messy jpa raw queries
         Specification<PropertyEntity> spec = buildSpec(location, maxPrice, minRooms, availability);
         return propertyRepository.findAll(spec, pageable).map(this::toResponse);
     }
@@ -71,6 +80,8 @@ public class PropertyService {
         p.setPricePerMonth(req.pricePerMonth());
         p.setRooms(req.rooms());
         p.setAvailability(req.availability() != null ? req.availability() : PropertyAvailability.available);
+        p.setPhone(req.phone());
+        p.setContactEmail(req.contactEmail());
         return toResponse(propertyRepository.save(p));
     }
 
@@ -97,6 +108,12 @@ public class PropertyService {
         }
         if (req.availability() != null) {
             p.setAvailability(req.availability());
+        }
+        if (req.phone() != null) {
+            p.setPhone(req.phone());
+        }
+        if (req.contactEmail() != null) {
+            p.setContactEmail(req.contactEmail());
         }
         return toResponse(p);
     }
@@ -157,6 +174,7 @@ public class PropertyService {
         List<PropertyImageResponse> imgs = p.getImages().stream()
                 .map(i -> new PropertyImageResponse(i.getId(), i.getFilePath()))
                 .toList();
+        long bookingCount = bookingService.countByProperty(p.getId());
         return new PropertyResponse(
                 p.getId(),
                 p.getLandlord().getId(),
@@ -168,7 +186,10 @@ public class PropertyService {
                 p.getRooms(),
                 p.getAvailability().name(),
                 p.getCreatedAt(),
-                imgs);
+                imgs,
+                p.getPhone(),
+                p.getContactEmail(),
+                bookingCount);
     }
 
     private static Specification<PropertyEntity> buildSpec(

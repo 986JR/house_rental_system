@@ -37,6 +37,11 @@ public class PropertyController {
         this.propertyService = propertyService;
     }
 
+    @GetMapping("/my")
+    public List<PropertyResponse> listMine() {
+        return propertyService.listMine();
+    }
+
     @GetMapping
     public PagedResponse<PropertyResponse> list(
             @RequestParam(required = false) String location,
@@ -45,9 +50,8 @@ public class PropertyController {
             @RequestParam(required = false) PropertyAvailability availability,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<PropertyResponse> result =
-                propertyService.search(location, maxPrice, minRooms, availability, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+        Page<PropertyResponse> result = propertyService.search(location, maxPrice, minRooms, availability, pageable);
         return new PagedResponse<>(
                 result.getContent(),
                 result.getTotalElements(),
@@ -77,7 +81,8 @@ public class PropertyController {
     }
 
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public List<PropertyImageResponse> uploadImages(@PathVariable long id, @RequestPart("files") List<MultipartFile> files) {
+    public List<PropertyImageResponse> uploadImages(@PathVariable long id,
+            @RequestPart("files") List<MultipartFile> files) {
         return propertyService.addImages(id, files);
     }
 }

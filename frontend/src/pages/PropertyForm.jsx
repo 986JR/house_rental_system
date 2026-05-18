@@ -24,7 +24,9 @@ const PropertyForm = () => {
     location: '',
     pricePerMonth: '',
     rooms: '',
-    availability: 'available'
+    availability: 'available',
+    phone: '',
+    contactEmail: ''
   });
   
   const [images, setImages] = useState([]);
@@ -41,6 +43,8 @@ const PropertyForm = () => {
             description: res.data.description,
             location: res.data.location,
             pricePerMonth: res.data.pricePerMonth,
+            phone: res.data.phone || '',
+            contactEmail: res.data.contactEmail || '',
             rooms: res.data.rooms,
             availability: res.data.availability
           });
@@ -193,8 +197,32 @@ const PropertyForm = () => {
                       onChange={(e) => setFormData({...formData, availability: e.target.value})}
                     >
                       <option value="available">Live & Available</option>
+                      <option value="rented">Rented</option>
                       <option value="unavailable">Hidden / Unavailable</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="+1 (555) 123-4567"
+                      className="input-field !rounded-2xl"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Contact Email</label>
+                    <input
+                      type="email"
+                      placeholder="contact@example.com"
+                      className="input-field !rounded-2xl"
+                      value={formData.contactEmail}
+                      onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
+                    />
                   </div>
                 </div>
 

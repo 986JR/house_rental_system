@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
@@ -55,20 +55,31 @@ function AppRoutes() {
   );
 }
 
+const LayoutWrapper = ({ children }) => {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isDashboard && <Navbar />}
+      <main className="flex-grow">
+        {children}
+      </main>
+      {!isDashboard && <Footer />}
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="flex flex-col min-h-screen">
-          <Toaster position="top-right" />
-          <Navbar />
-          <main className="flex-grow">
-            <AnimatePresence mode="wait">
-              <AppRoutes />
-            </AnimatePresence>
-          </main>
-          <Footer />
-        </div>
+        <Toaster position="top-right" />
+        <LayoutWrapper>
+          <AnimatePresence mode="wait">
+            <AppRoutes />
+          </AnimatePresence>
+        </LayoutWrapper>
       </Router>
     </AuthProvider>
   );

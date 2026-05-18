@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   MapPin, Bed, DollarSign, ShieldCheck, ChevronLeft,
   Send, Star, CheckCircle2, Shield, Share2, Heart,
-  Maximize2, Loader2, Wifi, Car, Trees, Wind
+  Maximize2, Loader2, Wifi, Car, Trees, Wind, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -178,8 +178,8 @@ const PropertyDetail = () => {
               {[
                 { label: 'Bedrooms',   value: property.rooms,   icon: Bed         },
                 { label: 'Monthly',    value: `$${property.pricePerMonth?.toLocaleString()}`, icon: DollarSign },
+                { label: 'Requests',   value: property.bookingCount || 0, icon: MessageSquare },
                 { label: 'Rating',     value: '4.9 / 5',        icon: Star        },
-                { label: 'Deposit',    value: '1 Month',        icon: Shield      },
               ].map(({ label, value, icon: Icon }) => (
                 <div key={label} className="card p-4 text-center">
                   <Icon size={20} className="text-primary-500 mx-auto mb-2" />
@@ -236,6 +236,8 @@ const PropertyDetail = () => {
                     <ShieldCheck size={14} className="text-primary-500 shrink-0" />
                   </div>
                   <p className="text-xs text-slate-500 truncate">{property.landlordEmail}</p>
+                  {property.phone && <p className="text-xs text-slate-500 mt-1">{property.phone}</p>}
+                  {property.contactEmail && <p className="text-xs text-slate-500">{property.contactEmail}</p>}
                 </div>
               </div>
 

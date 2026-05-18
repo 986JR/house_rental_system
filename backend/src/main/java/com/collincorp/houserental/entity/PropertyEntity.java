@@ -53,6 +53,12 @@ public class PropertyEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(length = 20)
+    private String phone;
+
+    @Column(length = 255)
+    private String contactEmail;
+
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PropertyImageEntity> images = new ArrayList<>();
 
@@ -131,5 +137,21 @@ public class PropertyEntity {
     public void addImage(PropertyImageEntity image) {
         images.add(image);
         image.setProperty(this);
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getContactEmail() {
+        return contactEmail;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
     }
 }

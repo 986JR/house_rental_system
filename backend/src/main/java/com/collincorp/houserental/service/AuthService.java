@@ -56,7 +56,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials");
         }
         String token = jwtService.generateToken(u.getId(), u.getEmail(), u.getRole().name());
-        return TokenResponse.of(token);
+        return TokenResponse.of(token, toUser(u));
     }
 
     @Transactional(readOnly = true)

@@ -18,4 +18,28 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
             order by b.createdAt desc
             """)
     List<BookingEntity> findAllForUser(@Param("userId") Long userId);
+
+    @Query(
+            """
+            select b from BookingEntity b
+            join fetch b.property p
+            join fetch p.landlord
+            join fetch b.tenant
+            where b.tenant.id = :tenantId
+            order by b.createdAt desc
+            """)
+    List<BookingEntity> findAllForTenant(@Param("tenantId") Long tenantId);
+
+    @Query(
+            """
+            select b from BookingEntity b
+            join fetch b.property p
+            join fetch p.landlord
+            join fetch b.tenant
+            where p.landlord.id = :landlordId
+            order by b.createdAt desc
+            """)
+    List<BookingEntity> findAllForLandlord(@Param("landlordId") Long landlordId);
+
+    long countByPropertyId(Long propertyId);
 }

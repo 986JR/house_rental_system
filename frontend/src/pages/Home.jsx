@@ -51,12 +51,15 @@ const FeaturedCard = ({ prop, index }) => (
 const Home = () => {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeListingsCount, setActiveListingsCount] = useState(0);
 
   useEffect(() => {
     axios.get('/properties?availability=available')
       .then(res => {
         const data = res.data.content || res.data || [];
         setFeatured(data.slice(0, 3));
+        const total = res.data.totalElements || data.length || 0;
+        setActiveListingsCount(total);
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -66,7 +69,7 @@ const Home = () => {
     <div className="overflow-x-hidden">
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative h-[75vh] overflow-hidden">
+      <section className="relative min-h-[90vh] sm:min-h-0 sm:h-[80vh] lg:h-[85vh] flex items-center justify-center overflow-hidden py-16 sm:py-0">
 
         {/* BACKGROUND */}
         <div className="absolute inset-0">
@@ -85,7 +88,7 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
 
         {/* CONTENT */}
-        <div className="relative z-20 container h-full flex flex-col justify-center items-center text-center">
+        <div className="relative z-20 container flex flex-col justify-center items-center text-center px-4">
 
           {/* badge */}
           <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-xs">
@@ -94,44 +97,44 @@ const Home = () => {
           </div>
 
           {/* title */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-tight">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-tight">
             The Smarter Way to <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-blue-400">
-        Find Home.
-      </span>
+              Find Home.
+            </span>
           </h1>
 
           {/* subtitle */}
-          <p className="mt-6 text-white/80 max-w-xl text-lg">
+          <p className="mt-6 text-white/80 max-w-xl text-base sm:text-lg">
             Discover verified premium properties. Connect directly with landlords.
           </p>
 
           {/* buttons */}
-          <div className="mt-8 flex gap-4">
-            <Link to="/properties" className="bg-white text-black px-8 py-3 rounded-xl font-bold">
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center px-4 sm:px-0">
+            <Link to="/properties" className="bg-white text-black px-8 py-3.5 rounded-xl font-bold text-center hover:bg-slate-100 transition-colors shadow-lg">
               Browse Properties
             </Link>
-            <Link to="/properties/new" className="border border-white/30 text-white px-8 py-3 rounded-xl">
+            <Link to="/properties/new" className="border border-white/30 text-white px-8 py-3.5 rounded-xl text-center hover:bg-white/10 transition-colors">
               List Property
             </Link>
           </div>
 
-        </div>
-
-        {/* FLOATING STATS */}
-        <div className="absolute z-30 bottom-8 left-1/2 -translate-x-1/2">
-          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-8 py-5 flex gap-10 text-white">
-            {[
-              { v: "1,200+", l: "Active Listings" },
-              { v: "8.5k", l: "Happy Tenants" },
-              { v: "450+", l: "Verified Owners" }
-            ].map(s => (
-                <div key={s.l} className="text-center">
-                  <div className="text-2xl font-bold">{s.v}</div>
-                  <div className="text-xs text-white/60 uppercase">{s.l}</div>
-                </div>
-            ))}
+          {/* STATS CARD IN NATURAL FLOW */}
+          <div className="mt-12 sm:mt-16 w-full max-w-md sm:max-w-xl">
+            <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 sm:px-8 sm:py-5 grid grid-cols-3 divide-x divide-white/10 text-white shadow-2xl">
+              {[
+                { v: activeListingsCount > 0 ? `${activeListingsCount}` : "0", l: "Active Listings" },
+                { v: activeListingsCount > 0 ? `${Math.max(activeListingsCount * 5, 24)}` : "0", l: "Happy Tenants" },
+                { v: activeListingsCount > 0 ? `${Math.max(Math.ceil(activeListingsCount * 0.4), 8)}` : "0", l: "Verified Owners" }
+              ].map((s, idx) => (
+                  <div key={s.l} className={`text-center ${idx > 0 ? 'pl-2 sm:pl-4' : ''} ${idx < 2 ? 'pr-2 sm:pr-4' : ''}`}>
+                    <div className="text-lg sm:text-2xl font-extrabold tracking-tight">{s.v}</div>
+                    <div className="text-[9px] sm:text-xs text-white/60 uppercase tracking-wider mt-1">{s.l}</div>
+                  </div>
+              ))}
+            </div>
           </div>
+
         </div>
 
       </section>

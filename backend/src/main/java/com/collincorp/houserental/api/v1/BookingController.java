@@ -24,6 +24,16 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
+    @GetMapping("/my")
+    public List<BookingResponse> listMyBookings() {
+        return bookingService.listMyBookings();
+    }
+
+    @GetMapping("/landlord")
+    public List<BookingResponse> listLandlordBookings() {
+        return bookingService.listLandlordBookings();
+    }
+
     @GetMapping
     public List<BookingResponse> list() {
         return bookingService.listMine();
