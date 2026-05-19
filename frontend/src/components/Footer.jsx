@@ -1,4 +1,4 @@
-import { Home, Mail, Phone, MapPin, Instagram, Twitter, Facebook, ExternalLink } from 'lucide-react';
+import { Home, Mail, Phone, MapPin, Instagram, Twitter, Facebook, Book } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => (
@@ -12,7 +12,7 @@ const Footer = () => (
             <div className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
               <Home size={22} />
             </div>
-            <span className="text-xl font-display font-extrabold text-slate-900 dark:text-white">
+            <span className="text-xl font-display font-extrabold text-slate-950 dark:text-white">
               Rental<span className="text-primary-600">Hub</span>
             </span>
           </Link>
@@ -20,8 +20,12 @@ const Footer = () => (
             Connecting renters with their dream spaces. The most trusted platform for premium property listings.
           </p>
           <div className="flex gap-3">
-            {[Instagram, Twitter, Facebook].map((Icon, i) => (
-              <a key={i} href="#" className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
+            {[
+              { Icon: Instagram, href: 'https://instagram.com' },
+              { Icon: Twitter,   href: 'https://twitter.com'   },
+              { Icon: Facebook,  href: 'https://facebook.com'  },
+            ].map(({ Icon, href }, i) => (
+              <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all">
                 <Icon size={17} />
               </a>
             ))}
@@ -36,7 +40,7 @@ const Footer = () => (
               { label: 'Search Houses',    to: '/properties' },
               { label: 'List a Property',  to: '/register'   },
               { label: 'Dashboard',        to: '/dashboard'  },
-              { label: 'Pricing',          to: '#'           },
+              { label: 'Pricing',          to: '/properties' },
             ].map(({ label, to }) => (
               <li key={label}>
                 <Link to={to} className="text-sm font-medium text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">{label}</Link>
@@ -49,9 +53,19 @@ const Footer = () => (
         <div>
           <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-5">Support</h4>
           <ul className="space-y-3.5">
-            {['Help Center', 'Safety Center', 'Community Guide', 'Cookie Policy'].map(item => (
-              <li key={item}>
-                <a href="#" className="text-sm font-medium text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">{item}</a>
+            <li>
+              <Link to="/manual" className="text-sm font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-350 transition-colors flex items-center gap-1.5">
+                <Book size={14} className="shrink-0" /> User Manual (PDF)
+              </Link>
+            </li>
+            {[
+              { label: 'Help Center',     to: '/manual#welcome' },
+              { label: 'Safety Center',   to: '/manual#admin' },
+              { label: 'Community Guide', to: '/manual#tenant' },
+              { label: 'Cookie Policy',   to: '/manual#welcome' },
+            ].map(({ label, to }) => (
+              <li key={label}>
+                <Link to={to} className="text-sm font-medium text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">{label}</Link>
               </li>
             ))}
           </ul>
@@ -62,13 +76,15 @@ const Footer = () => (
           <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-5">Contact</h4>
           <ul className="space-y-4">
             {[
-              { Icon: MapPin, text: '123 Rental Blvd, Suite 100' },
-              { Icon: Phone,  text: '+1 (555) 000-0000'          },
-              { Icon: Mail,   text: 'support@rentalhub.com'      },
-            ].map(({ Icon, text }) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-slate-500 dark:text-slate-400">
-                <Icon size={16} className="text-primary-500 mt-0.5 shrink-0" />
-                <span>{text}</span>
+              { Icon: MapPin, text: 'Dodoma, Tanzania P.O.BOX 7000', href: 'https://maps.google.com/?q=Dodoma,Tanzania' },
+              { Icon: Phone,  text: '+255767113665',                 href: 'tel:+255767113665' },
+              { Icon: Mail,   text: 'support@rentalhub.com',         href: 'mailto:support@rentalhub.com' },
+            ].map(({ Icon, text, href }) => (
+              <li key={text}>
+                <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" className="flex items-start gap-3 text-sm text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 transition-colors">
+                  <Icon size={16} className="text-primary-500 mt-0.5 shrink-0" />
+                  <span>{text}</span>
+                </a>
               </li>
             ))}
           </ul>
@@ -80,8 +96,12 @@ const Footer = () => (
           &copy; {new Date().getFullYear()} RentalHub. All rights reserved.
         </p>
         <div className="flex flex-wrap justify-center gap-6">
-          {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(item => (
-            <a key={item} href="#" className="text-xs font-medium text-slate-400 hover:text-primary-600 transition-colors">{item}</a>
+          {[
+            { label: 'Privacy Policy',   to: '/manual' },
+            { label: 'Terms of Service', to: '/manual' },
+            { label: 'Cookie Policy',    to: '/manual' },
+          ].map(({ label, to }) => (
+            <Link key={label} to={to} className="text-xs font-medium text-slate-400 hover:text-primary-600 transition-colors">{label}</Link>
           ))}
         </div>
       </div>
