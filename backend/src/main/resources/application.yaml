@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/house_rental}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:2050a}
+    password: ${DB_PASSWORD:Jay9Nine!}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false

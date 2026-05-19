@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class HouseRentalApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(HouseRentalApplication.class, args);
+        System.out.println("HOUSE RENTAL IS RUNNING :)");
     }
 }
