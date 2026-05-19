@@ -10,6 +10,7 @@ import com.collincorp.houserental.dto.PropertyUpdateRequest;
 import com.collincorp.houserental.entity.PropertyEntity;
 import com.collincorp.houserental.entity.PropertyImageEntity;
 import com.collincorp.houserental.entity.UserEntity;
+import com.collincorp.houserental.repository.PropertyImageRepository;
 import com.collincorp.houserental.repository.PropertyRepository;
 import com.collincorp.houserental.support.SecurityUtils;
 import jakarta.persistence.criteria.Predicate;
@@ -29,11 +30,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final PropertyImageRepository propertyImageRepository;
     private final StorageService storageService;
     private final BookingService bookingService;
 
-    public PropertyService(PropertyRepository propertyRepository, StorageService storageService, BookingService bookingService) {
+    public PropertyService(PropertyRepository propertyRepository, PropertyImageRepository propertyImageRepository, StorageService storageService, BookingService bookingService) {
         this.propertyRepository = propertyRepository;
+        this.propertyImageRepository = propertyImageRepository;
         this.storageService = storageService;
         this.bookingService = bookingService;
     }
@@ -81,7 +84,9 @@ public class PropertyService {
         p.setRooms(req.rooms());
         p.setAvailability(req.availability() != null ? req.availability() : PropertyAvailability.available);
         p.setPhone(req.phone());
+
         p.setContactEmail(req.contactEmail());
+
         return toResponse(propertyRepository.save(p));
     }
 
@@ -134,16 +139,17 @@ public class PropertyService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "property_not_found"));
         assertOwnerOrAdmin(p);
 
-        List<PropertyImageResponse> responses = new ArrayList<>();
+        List<PropertyImageEntity> newImages = new ArrayList<>();
         for (MultipartFile file : files) {
             String path = storageService.store(file);
             PropertyImageEntity img = new PropertyImageEntity();
             img.setFilePath(path);
             p.addImage(img);
-            responses.add(new PropertyImageResponse(img.getId(), img.getFilePath()));
+            newImages.add(propertyImageRepository.saveAndFlush(img));
         }
-        propertyRepository.save(p);
-        return responses;
+        return newImages.stream()
+                .map(img -> new PropertyImageResponse(img.getId(), img.getFilePath()))
+                .toList();
     }
 
     @Transactional
@@ -156,8 +162,8 @@ public class PropertyService {
         PropertyImageEntity img = new PropertyImageEntity();
         img.setFilePath(path);
         p.addImage(img);
-        propertyRepository.save(p);
-        return new PropertyImageResponse(img.getId(), img.getFilePath());
+        PropertyImageEntity saved = propertyImageRepository.saveAndFlush(img);
+        return new PropertyImageResponse(saved.getId(), saved.getFilePath());
     }
 
     private void assertOwnerOrAdmin(PropertyEntity p) {

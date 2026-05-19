@@ -35,9 +35,11 @@ app:
   uploads:
     dir: ${UPLOADS_DIR:./house_rental_uploads}
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-storage-bucket}
-    api-key: ${CLOUDINARY_API_KEY:839482175928471}
-    api-secret: ${CLOUDINARY_API_SECRET:aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0u}
+    url: ${CLOUDINARY_URL:cloudinary://116679892943646:jEFtAjdjdbJ2QexABpJWW9h5U2Y@dp2sofb5n}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:dp2sofb5n}
+    api-key: ${CLOUDINARY_API_KEY:116679892943646}
+    api-secret: ${CLOUDINARY_API_SECRET:jEFtAjdjdbJ2QexABpJWW9h5U2Y}
+    folder: ${CLOUDINARY_FOLDER:house-rental/properties}
 
 ---
 spring:
@@ -45,4 +47,4 @@ spring:
     activate:
       on-profile: dev
   jpa:
-    show-sql: false
+    show-sql: true

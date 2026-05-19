@@ -1,3 +1,3 @@
 package com.collincorp.houserental.dto;
 
-public record PropertyImageResponse(long id, String filePath) {}
+public record PropertyImageResponse(Long id, String filePath) {}
