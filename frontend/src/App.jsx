@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
 import PropertyForm from './pages/PropertyForm';
+import Manual from './pages/Manual';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/properties" element={<Properties />} />
       <Route path="/properties/:id" element={<PropertyDetail />} />
+      <Route path="/manual" element={<Manual />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard" element={
@@ -58,14 +60,15 @@ function AppRoutes() {
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
+  const isManual = location.pathname.startsWith('/manual');
   
   return (
     <div className="flex flex-col min-h-screen">
-      {!isDashboard && <Navbar />}
+      {!isDashboard && !isManual && <Navbar />}
       <main className="flex-grow">
         {children}
       </main>
-      {!isDashboard && <Footer />}
+      {!isDashboard && !isManual && <Footer />}
     </div>
   );
 };
