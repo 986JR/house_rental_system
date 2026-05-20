@@ -7,48 +7,73 @@
 [INFO] 
 [INFO] >>> spring-boot:3.4.1:run (default-cli) > test-compile @ house_rental >>>
 [INFO] 
-[INFO] --- frontend:1.15.1:install-node-and-npm (install-node-and-npm) @ house_rental ---
-[INFO] Node v20.18.1 is already installed.
-[INFO] NPM 10.9.0 is already installed.
+[INFO] --- resources:3.3.1:resources (default-resources) @ house_rental ---
+[INFO] Copying 12 resources from src/main/resources to target/classes
 [INFO] 
-[INFO] --- frontend:1.15.1:npm (npm-install) @ house_rental ---
-[INFO] Running 'npm install' in C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend
-[INFO] npm warn cleanup Failed to remove some directories [
-[INFO] npm warn cleanup   [
-[INFO] npm warn cleanup     'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\framer-motion',
-[INFO] npm warn cleanup     [Error: EPERM: operation not permitted, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\framer-motion\dist\es\render\components\m'] {
-[INFO] npm warn cleanup       errno: -4048,
-[INFO] npm warn cleanup       code: 'EPERM',
-[INFO] npm warn cleanup       syscall: 'rmdir',
-[INFO] npm warn cleanup       path: 'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\framer-motion\\dist\\es\\render\\components\\m'
-[INFO] npm warn cleanup     }
-[INFO] npm warn cleanup   ],
-[INFO] npm warn cleanup   [
-[INFO] npm warn cleanup     'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\sucrase',
-[INFO] npm warn cleanup     [Error: EPERM: operation not permitted, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\sucrase'] {
-[INFO] npm warn cleanup       errno: -4048,
-[INFO] npm warn cleanup       code: 'EPERM',
-[INFO] npm warn cleanup       syscall: 'rmdir',
-[INFO] npm warn cleanup       path: 'C:\\Users\\colli\\Desktop\\SpringBoot-Projects\\house_rental\\frontend\\node_modules\\sucrase'
-[INFO] npm warn cleanup     }
-[INFO] npm warn cleanup   ]
-[INFO] npm warn cleanup ]
-[INFO] npm error code ENOTEMPTY
-[INFO] npm error syscall rmdir
-[INFO] npm error path C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\lucide-react\dist\esm\icons
-[INFO] npm error errno -4051
-[INFO] npm error ENOTEMPTY: directory not empty, rmdir 'C:\Users\colli\Desktop\SpringBoot-Projects\house_rental\frontend\node_modules\lucide-react\dist\esm\icons'
-[INFO] npm error A complete log of this run can be found in: C:\Users\colli\AppData\Local\npm-cache\_logs\2026-05-15T15_47_17_185Z-debug-0.log
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD FAILURE
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  02:08 min
-[INFO] Finished at: 2026-05-15T18:48:51+03:00
-[INFO] ------------------------------------------------------------------------
-[ERROR] Failed to execute goal com.github.eirslett:frontend-maven-plugin:1.15.1:npm (npm-install) on project house_rental: Failed to run task: 'npm install' failed. org.apache.commons.exec.ExecuteException: Process exited with an error: -4051 (Exit value: -4051) -> [Help 1]
-[ERROR] 
-[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
-[ERROR] Re-run Maven using the -X switch to enable full debug logging.
-[ERROR] 
-[ERROR] For more information about the errors and possible solutions, please read the following articles:
-[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[INFO] --- compiler:3.13.0:compile (default-compile) @ house_rental ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ house_rental ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ house_rental ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.4.1:run (default-cli) < test-compile @ house_rental <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.4.1:run (default-cli) @ house_rental ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.1)
+
+2026-05-20T11:32:48.937+03:00  INFO 529951 --- [house_rental] [           main] c.c.houserental.HouseRentalApplication   : Starting HouseRentalApplication using Java 21.0.10 with PID 529951 (/home/daniel/Downloads/house_rental (2)/house_rental/backend/target/classes started by daniel in /home/daniel/Downloads/house_rental (2)/house_rental/backend)
+2026-05-20T11:32:48.941+03:00  INFO 529951 --- [house_rental] [           main] c.c.houserental.HouseRentalApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-05-20T11:32:50.879+03:00  INFO 529951 --- [house_rental] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-20T11:32:51.099+03:00  INFO 529951 --- [house_rental] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 195 ms. Found 6 JPA repository interfaces.
+2026-05-20T11:32:52.756+03:00  INFO 529951 --- [house_rental] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-05-20T11:32:52.773+03:00  INFO 529951 --- [house_rental] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-20T11:32:52.773+03:00  INFO 529951 --- [house_rental] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-05-20T11:32:52.840+03:00  INFO 529951 --- [house_rental] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-20T11:32:52.841+03:00  INFO 529951 --- [house_rental] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3818 ms
+2026-05-20T11:32:53.290+03:00  INFO 529951 --- [house_rental] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-20T11:32:53.510+03:00  INFO 529951 --- [house_rental] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3869a6e5
+2026-05-20T11:32:53.511+03:00  INFO 529951 --- [house_rental] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-20T11:32:53.559+03:00  INFO 529951 --- [house_rental] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/house_rental (PostgreSQL 16.13)
+2026-05-20T11:32:53.625+03:00  INFO 529951 --- [house_rental] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 4 migrations (execution time 00:00.036s)
+2026-05-20T11:32:53.651+03:00  INFO 529951 --- [house_rental] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 3
+2026-05-20T11:32:53.669+03:00  INFO 529951 --- [house_rental] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - super admin features"
+2026-05-20T11:32:53.684+03:00  WARN 529951 --- [house_rental] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: column "created_by" of relation "users" already exists, skipping (SQL State: 42701 - Error Code: 0)
+2026-05-20T11:32:53.690+03:00  WARN 529951 --- [house_rental] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: column "approved" of relation "properties" already exists, skipping (SQL State: 42701 - Error Code: 0)
+2026-05-20T11:32:53.719+03:00  INFO 529951 --- [house_rental] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "public", now at version v4 (execution time 00:00.027s)
+2026-05-20T11:32:53.856+03:00  INFO 529951 --- [house_rental] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-20T11:32:53.943+03:00  INFO 529951 --- [house_rental] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.4.Final
+2026-05-20T11:32:53.992+03:00  INFO 529951 --- [house_rental] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-20T11:32:54.433+03:00  INFO 529951 --- [house_rental] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-20T11:32:54.544+03:00  INFO 529951 --- [house_rental] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.13
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-20T11:32:56.769+03:00  INFO 529951 --- [house_rental] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-20T11:32:56.909+03:00  INFO 529951 --- [house_rental] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-20T11:32:57.773+03:00  INFO 529951 --- [house_rental] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-20T11:32:58.398+03:00  WARN 529951 --- [house_rental] [           main] o.s.aop.framework.CglibAopProxy          : Unable to proxy interface-implementing method [public final void org.springframework.web.filter.OncePerRequestFilter.doFilter(jakarta.servlet.ServletRequest,jakarta.servlet.ServletResponse,jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException,java.io.IOException] because it is marked as final, consider using interface-based JDK proxies instead.
+2026-05-20T11:32:58.398+03:00  WARN 529951 --- [house_rental] [           main] o.s.aop.framework.CglibAopProxy          : Unable to proxy interface-implementing method [public final void org.springframework.web.filter.GenericFilterBean.init(jakarta.servlet.FilterConfig) throws jakarta.servlet.ServletException] because it is marked as final, consider using interface-based JDK proxies instead.
+2026-05-20T11:32:59.000+03:00  INFO 529951 --- [house_rental] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name appUserDetailsService
+2026-05-20T11:32:59.126+03:00  INFO 529951 --- [house_rental] [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2026-05-20T11:33:00.256+03:00  INFO 529951 --- [house_rental] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-05-20T11:33:00.273+03:00  INFO 529951 --- [house_rental] [           main] c.c.houserental.HouseRentalApplication   : Started HouseRentalApplication in 12.177 seconds (process running for 12.737)
+2026-05-20T11:45:46.318+03:00  INFO 529951 --- [house_rental] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-20T11:45:46.417+03:00  INFO 529951 --- [house_rental] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-20T11:45:46.899+03:00  INFO 529951 --- [house_rental] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 464 ms
