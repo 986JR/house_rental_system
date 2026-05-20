@@ -21,13 +21,23 @@ public class LogService {
 
     @Transactional
     public void log(LogAction action, String entityType, Long entityId, String details) {
-        UserEntity user = SecurityUtils.currentUser();
+        UserEntity user = null;
+        try {
+            user = SecurityUtils.currentUser();
+        } catch (Exception e) {
+            // Fallback for unauthenticated context
+        }
+        log(action, entityType, entityId, user != null ? user.getId() : null, user != null ? user.getEmail() : "anonymous", details);
+    }
+
+    @Transactional
+    public void log(LogAction action, String entityType, Long entityId, Long userId, String userEmail, String details) {
         SystemLogEntity log = new SystemLogEntity();
         log.setAction(action);
         log.setEntityType(entityType);
         log.setEntityId(entityId);
-        log.setUserId(user.getId());
-        log.setUserEmail(user.getEmail());
+        log.setUserId(userId);
+        log.setUserEmail(userEmail);
         log.setDetails(details);
         systemLogRepository.save(log);
     }

@@ -288,13 +288,17 @@ const WavyTimeTracker = () => {
 
 const Dashboard = () => {
   const { user, updateProfile, logout } = useAuth();
-  const [data, setData] = useState({ properties: [], bookings: [], logs: [] });
+  const [data, setData] = useState({ properties: [], bookings: [], logs: [], users: [] });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
-  // Tab states: 'overview' | 'listings' | 'bookings' | 'settings' | 'logs'
+  // Tab states: 'overview' | 'listings' | 'bookings' | 'settings' | 'logs' | 'users'
   const [activeTab, setActiveTab] = useState('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // User management modal states
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userForm, setUserForm] = useState({ id: null, email: '', fullName: '', password: '', role: 'tenant', active: true });
 
   // Profile Edit State
   const [profileForm, setProfileForm] = useState({ fullName: '', password: '' });
@@ -310,19 +314,20 @@ const Dashboard = () => {
     document.documentElement.classList.toggle('dark', next);
   };
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchDashboardDataBackground = async () => {
     try {
       if (user.role === 'admin') {
-        const [propRes, bookRes, logsRes] = await Promise.all([
+        const [propRes, bookRes, logsRes, usersRes] = await Promise.all([
           axios.get('/properties'),
           axios.get('/admin/bookings'),
-          axios.get('/admin/logs')
+          axios.get('/admin/logs'),
+          axios.get('/admin/users')
         ]);
         setData({ 
           properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
-          logs: logsRes.data || [] 
+          logs: logsRes.data || [],
+          users: usersRes.data || []
         });
       } else if (user.role === 'landlord') {
         const [propRes, bookRes] = await Promise.all([
@@ -332,18 +337,67 @@ const Dashboard = () => {
         setData({ 
           properties: propRes.data || [], 
           bookings: bookRes.data || [], 
-          logs: [] 
+          logs: [],
+          users: []
         });
       } else {
-        const bookRes = await axios.get('/bookings/my');
+        const [bookRes, propRes] = await Promise.all([
+          axios.get('/bookings/my'),
+          axios.get('/properties')
+        ]);
         setData({ 
-          properties: [], 
+          properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
-          logs: [] 
+          logs: [],
+          users: []
         });
       }
     } catch (error) {
-      setData({ properties: [], bookings: [], logs: [] });
+      // Ignored in background
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      if (user.role === 'admin') {
+        const [propRes, bookRes, logsRes, usersRes] = await Promise.all([
+          axios.get('/properties'),
+          axios.get('/admin/bookings'),
+          axios.get('/admin/logs'),
+          axios.get('/admin/users')
+        ]);
+        setData({ 
+          properties: propRes.data.content || propRes.data || [], 
+          bookings: bookRes.data || [], 
+          logs: logsRes.data || [],
+          users: usersRes.data || []
+        });
+      } else if (user.role === 'landlord') {
+        const [propRes, bookRes] = await Promise.all([
+          axios.get('/properties/my'),
+          axios.get('/bookings/landlord')
+        ]);
+        setData({ 
+          properties: propRes.data || [], 
+          bookings: bookRes.data || [], 
+          logs: [],
+          users: []
+        });
+      } else {
+        const [bookRes, propRes] = await Promise.all([
+          axios.get('/bookings/my'),
+          axios.get('/properties')
+        ]);
+        setData({ 
+          properties: propRes.data.content || propRes.data || [], 
+          bookings: bookRes.data || [], 
+          logs: [],
+          users: []
+        });
+      }
+    } catch (error) {
+      setData({ properties: [], bookings: [], logs: [], users: [] });
     } finally {
       setTimeout(() => setLoading(false), 500);
     }
@@ -353,6 +407,13 @@ const Dashboard = () => {
     if (user) {
       fetchDashboardData();
       setProfileForm({ fullName: user.fullName || '', password: '' });
+
+      // Real-time updates without manual page refresh (FR-ADM-05 / NFR-01)
+      const interval = setInterval(() => {
+        fetchDashboardDataBackground();
+      }, 5000);
+
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -381,6 +442,89 @@ const Dashboard = () => {
     }
   };
 
+  const handleApproveProperty = async (propertyId, approvedVal) => {
+    try {
+      await axios.put(`/properties/${propertyId}/approve`, null, { params: { approved: approvedVal } });
+      toast.success(approvedVal ? 'Property approved and added to marketplace' : 'Property left unapproved');
+      fetchDashboardData();
+    } catch (err) {
+      toast.error('Failed to update property approval status');
+    }
+  };
+
+  const handleOpenUserModal = (userToEdit = null) => {
+    if (userToEdit) {
+      setUserForm({
+        id: userToEdit.id,
+        email: userToEdit.email,
+        fullName: userToEdit.fullName || '',
+        password: '',
+        role: userToEdit.role || 'tenant',
+        active: userToEdit.active
+      });
+    } else {
+      setUserForm({
+        id: null,
+        email: '',
+        fullName: '',
+        password: '',
+        role: 'tenant',
+        active: true
+      });
+    }
+    setUserModalOpen(true);
+  };
+
+  const handleSaveUser = async (e) => {
+    e.preventDefault();
+    try {
+      if (userForm.id) {
+        await axios.put(`/admin/users/${userForm.id}`, {
+          email: userForm.email,
+          fullName: userForm.fullName,
+          password: userForm.password || null,
+          role: userForm.role,
+          active: userForm.active
+        });
+        toast.success('User updated successfully');
+      } else {
+        await axios.post('/admin/users', {
+          email: userForm.email,
+          fullName: userForm.fullName,
+          password: userForm.password,
+          role: userForm.role,
+          active: userForm.active
+        });
+        toast.success('User added successfully');
+      }
+      setUserModalOpen(false);
+      fetchDashboardData();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to save user';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userEmail, canDelete) => {
+    if (!canDelete) {
+      toast.error('Food Chain Rule: Only the administrator who added this user can delete them.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to delete user ${userEmail}?`)) return;
+    try {
+      await axios.delete(`/admin/users/${userId}`);
+      toast.success('User deleted successfully');
+      fetchDashboardData();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Failed to delete user';
+      if (errorMsg.includes('creator')) {
+        toast.error('Food Chain Rule: Only the administrator who added this user can delete them.');
+      } else {
+        toast.error(errorMsg);
+      }
+    }
+  };
+
   const handleBookingAction = async (bookingId, status) => {
     try {
       await axios.put(`/bookings/${bookingId}`, { status });
@@ -406,6 +550,7 @@ const Dashboard = () => {
     }
     list.push({ id: 'bookings', label: user?.role === 'landlord' ? 'Requests' : 'Applications', icon: MessageSquare });
     if (user?.role === 'admin') {
+      list.push({ id: 'users', label: 'Manage Users', icon: Users });
       list.push({ id: 'logs', label: 'Audit Logs', icon: ShieldAlert });
     }
     list.push({ id: 'settings', label: 'Settings', icon: Settings });
@@ -459,10 +604,9 @@ const Dashboard = () => {
       ];
     } else if (user.role === 'admin') {
       return [
-        { label: 'Total Marketplace Listings', value: totalPropsCount, desc: 'Active units in database', highlight: true },
-        { label: 'Booking Queries', value: data.bookings.length, desc: 'Global platform transactions' },
-        { label: 'System Logs', value: data.logs.length, desc: 'Audit security entries' },
-        { label: 'Active Alerts', value: adminErrorLogs, desc: `${adminErrorLogs} actions require check` }
+        { label: 'Total Properties', value: totalPropsCount, desc: 'Active units in database', highlight: true },
+        { label: 'Total Users', value: data.users?.length || 0, desc: 'Registered accounts' },
+        { label: 'Total Bookings', value: data.bookings.length, desc: 'Coordinates requested' }
       ];
     } else {
       // Tenant
@@ -752,7 +896,7 @@ const Dashboard = () => {
               </div>
 
               {/* Row 2: Metrics Grid (1 Solid primary card, 3 bordered cards, dynamically loaded) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${metrics.length} gap-6`}>
                 {metrics.map((stat, i) => (
                   <motion.div 
                     key={i}
@@ -792,134 +936,199 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              {/* Row 3: Middle Layout Split */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                {/* Column 1: Dynamic Bar Chart */}
-                <div className="lg:col-span-6 flex flex-col">
-                  <StripedBarChart 
-                    title="System Inquiry Activity" 
-                    counts={bookingsCounts} 
-                    todayIndex={todayIndex} 
-                  />
-                </div>
-
-                {/* Column 2: Reminders Widget */}
-                <div className="lg:col-span-3 flex flex-col">
-                  <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 flex flex-col justify-between h-full">
-                    <div>
-                      <span className="text-[10px] font-bold text-primary-500 uppercase tracking-widest block mb-1">Coordinate Reminders</span>
-                      <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Reminders</h4>
-                    </div>
-
-                    <div className="py-4">
-                      <h5 className="font-bold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2 mb-1">
-                        {reminder.title}
-                      </h5>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold line-clamp-1">{reminder.desc}</p>
-                      <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium mt-1 uppercase tracking-wider">{reminder.time}</p>
-                    </div>
-
-                    <button 
-                      onClick={() => setActiveTab('bookings')}
-                      className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-1.5 shadow-md shadow-primary-500/10 transition-all active:scale-[0.98]"
-                    >
-                      <Clock size={14} /> {reminder.actionText}
-                    </button>
+              {/* Conditional Row Layouts based on Role */}
+              {user.role === 'admin' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Column 1: Dynamic Bar Chart */}
+                  <div className="lg:col-span-6 flex flex-col">
+                    <StripedBarChart 
+                      title="System Inquiry Activity" 
+                      counts={bookingsCounts} 
+                      todayIndex={todayIndex} 
+                    />
                   </div>
-                </div>
 
-                {/* Column 3: Active Listings List */}
-                <div className="lg:col-span-3 flex flex-col">
-                  <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 flex flex-col justify-between h-full">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-base font-display font-extrabold text-slate-950 dark:text-white tracking-tight">My Listings</h4>
-                      <Link to="/properties/new" className="text-[9px] font-bold text-primary-600 border border-primary-100 hover:bg-primary-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                        + New
-                      </Link>
-                    </div>
+                  {/* Column 2: Recent Bookings */}
+                  <div className="lg:col-span-6 flex flex-col">
+                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Bookings</h4>
+                        <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
+                          Review All
+                        </button>
+                      </div>
 
-                    <div className="space-y-4 max-h-[160px] overflow-y-auto no-scrollbar">
-                      {data.properties.slice(0, 4).map(prop => (
-                        <div key={prop.id} className="flex items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${prop.availability === 'available' ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-900 dark:text-white truncate">{prop.title}</p>
-                              <p className="text-[9px] text-slate-400 truncate">{prop.location}</p>
-                            </div>
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
-                            ${prop.pricePerMonth}/mo
-                          </span>
-                        </div>
-                      ))}
-                      {data.properties.length === 0 && (
-                        <div className="text-center py-6 text-slate-400 text-xs italic">
-                          No active listings.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Row 4: Bottom Layout Split */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                {/* Column 1: Booking requests (Dynamic Collaboration) */}
-                <div className="lg:col-span-6 flex flex-col">
-                  <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
-                    <div className="flex justify-between items-center mb-6">
-                      <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Bookings</h4>
-                      <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
-                        Review All
-                      </button>
-                    </div>
-
-                    <div className="space-y-5">
-                      {data.bookings.slice(0, 4).map(book => {
-                        let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
-                        if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
-                        return (
-                          <div key={book.id} className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
-                                {book.tenantEmail?.charAt(0).toUpperCase()}
+                      <div className="space-y-5">
+                        {data.bookings.slice(0, 4).map(book => {
+                          let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
+                          if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+                          return (
+                            <div key={book.id} className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                  {book.tenantEmail?.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-950 dark:text-white text-xs truncate">{book.tenantEmail}</p>
+                                  <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-slate-900 dark:text-white text-xs truncate">{book.tenantEmail}</p>
-                                <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
-                              </div>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
+                                {book.status}
+                              </span>
                             </div>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
-                              {book.status}
-                            </span>
+                          );
+                        })}
+                        {data.bookings.length === 0 && (
+                          <div className="text-center py-10 text-slate-400 text-xs italic">
+                            No active coordinate requests.
                           </div>
-                        );
-                      })}
-                      {data.bookings.length === 0 && (
-                        <div className="text-center py-10 text-slate-400 text-xs italic">
-                          No active coordinate requests.
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Column 2: Occupancy Gauge (Dynamic occupancy progress) */}
-                <div className="lg:col-span-3 flex flex-col">
-                  <StripedSemiCircleGauge occupancyPercentage={occupancyRatePercentage} />
+              {user.role === 'landlord' && (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Column 1: Dynamic Bar Chart */}
+                    <div className="lg:col-span-6 flex flex-col">
+                      <StripedBarChart 
+                        title="Listing Inquiry Activity" 
+                        counts={bookingsCounts} 
+                        todayIndex={todayIndex} 
+                      />
+                    </div>
+
+                    {/* Column 2: Recent Bookings */}
+                    <div className="lg:col-span-6 flex flex-col">
+                      <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
+                        <div className="flex justify-between items-center mb-6">
+                          <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Bookings</h4>
+                          <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
+                            Review All
+                          </button>
+                        </div>
+
+                        <div className="space-y-5">
+                          {data.bookings.slice(0, 4).map(book => {
+                            let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
+                            if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+                            return (
+                              <div key={book.id} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                    {book.tenantEmail?.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-slate-950 dark:text-white text-xs truncate">{book.tenantEmail}</p>
+                                    <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
+                                  </div>
+                                </div>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
+                                  {book.status}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {data.bookings.length === 0 && (
+                            <div className="text-center py-10 text-slate-400 text-xs italic">
+                              No active coordinate requests.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Column 1: Occupancy Gauge */}
+                    <div className="lg:col-span-4 flex flex-col">
+                      <StripedSemiCircleGauge occupancyPercentage={occupancyRatePercentage} />
+                    </div>
+
+                    {/* Column 2: My Listings */}
+                    <div className="lg:col-span-8 flex flex-col">
+                      <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 flex flex-col justify-between h-full">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-base font-display font-extrabold text-slate-950 dark:text-white tracking-tight">My Listings</h4>
+                          <Link to="/properties/new" className="text-[9px] font-bold text-primary-600 border border-primary-100 hover:bg-primary-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            + New
+                          </Link>
+                        </div>
+
+                        <div className="space-y-4 max-h-[160px] overflow-y-auto no-scrollbar">
+                          {data.properties.slice(0, 4).map(prop => (
+                            <div key={prop.id} className="flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${prop.availability === 'available' ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 dark:text-white truncate">{prop.title}</p>
+                                  <p className="text-[9px] text-slate-400 truncate">{prop.location}</p>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full shrink-0">
+                                ${prop.pricePerMonth}/mo
+                              </span>
+                            </div>
+                          ))}
+                          {data.properties.length === 0 && (
+                            <div className="text-center py-6 text-slate-400 text-xs italic">
+                              No active listings.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                {/* Column 3: Active Stopwatch */}
-                <div className="lg:col-span-3 flex flex-col">
-                  <WavyTimeTracker />
+              {user.role === 'tenant' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Column 1: Recent Applications */}
+                  <div className="lg:col-span-12 flex flex-col">
+                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Applications</h4>
+                        <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
+                          Review All
+                        </button>
+                      </div>
+
+                      <div className="space-y-5">
+                        {data.bookings.slice(0, 4).map(book => {
+                          let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
+                          if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+                          return (
+                            <div key={book.id} className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                  {book.tenantEmail?.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-950 dark:text-white text-xs truncate">{book.tenantEmail}</p>
+                                  <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
+                                </div>
+                              </div>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
+                                {book.status}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {data.bookings.length === 0 && (
+                          <div className="text-center py-10 text-slate-400 text-xs italic">
+                            No active coordinate requests.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-              </div>
-
+              )}
             </div>
           )}
 
@@ -960,9 +1169,12 @@ const Dashboard = () => {
                               className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                               alt={prop.title}
                             />
-                            <div className="absolute top-3 left-3 flex gap-2">
+                            <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                               <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${prop.availability === 'available' ? 'bg-primary-600 text-white' : 'bg-slate-500 text-white'}`}>
                                 ● {prop.availability}
+                              </span>
+                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${prop.approved ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'}`}>
+                                {prop.approved ? 'Approved' : 'Pending Review'}
                               </span>
                             </div>
                             <div className="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-xl text-white font-bold text-xs">
@@ -983,6 +1195,18 @@ const Dashboard = () => {
                           </span>
 
                           <div className="flex items-center gap-2">
+                            {user.role === 'admin' && (
+                              <button
+                                onClick={() => handleApproveProperty(prop.id, !prop.approved)}
+                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm ${
+                                  prop.approved 
+                                    ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400' 
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                }`}
+                              >
+                                {prop.approved ? 'Leave it' : 'Add (Approve)'}
+                              </button>
+                            )}
                             <Link to={`/properties/${prop.id}/edit`} className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-primary-600 transition-all shadow-sm hover:scale-105 active:scale-95">
                               <Edit3 size={16} />
                             </Link>
@@ -1002,6 +1226,102 @@ const Dashboard = () => {
                     <p className="text-slate-400 font-medium italic">No properties listed yet.</p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Active Tab: Manage Users (Admin Only) */}
+          {activeTab === 'users' && user.role === 'admin' && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800/80 shadow-premium bg-white dark:bg-slate-900/60"
+            >
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-900/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950 dark:text-white">User Management</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Add, update, delete or assign roles to platform members.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleOpenUserModal()}
+                  className="btn-primary !rounded-xl !py-2.5 !px-5 text-xs font-bold bg-primary-600 text-white hover:bg-primary-700 flex items-center gap-1.5 shadow-md shadow-primary-500/10"
+                >
+                  <Plus size={14} className="stroke-[3]" /> Add User
+                </button>
+              </div>
+
+              <div className="p-8 overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      <th className="pb-4">Name</th>
+                      <th className="pb-4">Email</th>
+                      <th className="pb-4">Role</th>
+                      <th className="pb-4">Status</th>
+                      <th className="pb-4">Created By</th>
+                      <th className="pb-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs">
+                    {data.users?.map(u => {
+                      const creatorEmail = u.createdBy ? (data.users.find(creator => creator.id === u.createdBy)?.email || `User #${u.createdBy}`) : 'System Seed';
+                      const isCreatorSelf = u.createdBy === user.id;
+                      const isTargetAdmin = u.role === 'admin';
+                      const canDelete = !isTargetAdmin || isCreatorSelf;
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors">
+                          <td className="py-4 font-bold text-slate-900 dark:text-white">{u.fullName || 'N/A'}</td>
+                          <td className="py-4 text-slate-500 dark:text-slate-400">{u.email}</td>
+                          <td className="py-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                              u.role === 'admin' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
+                              u.role === 'landlord' ? 'bg-primary-100 text-primary-700 dark:bg-primary-950/30 dark:text-primary-400' :
+                              'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-4">
+                            <span className={`flex items-center gap-1.5 font-bold ${u.active ? 'text-emerald-500' : 'text-slate-400'}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${u.active ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                              {u.active ? 'Active' : 'Suspended'}
+                            </span>
+                          </td>
+                          <td className="py-4 text-slate-400 dark:text-slate-500 text-[10px]">{creatorEmail}</td>
+                          <td className="py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleOpenUserModal(u)}
+                                className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 flex items-center justify-center transition-all border border-slate-100 dark:border-slate-700"
+                                title="Edit User"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(u.id, u.email, canDelete)}
+                                disabled={u.id === user.id}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all border ${
+                                  u.id === user.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-700 border-transparent cursor-not-allowed' :
+                                  canDelete ? 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 border-slate-100 dark:border-slate-700' :
+                                  'bg-slate-100 dark:bg-slate-800 text-slate-350 dark:text-slate-700 border-transparent cursor-not-allowed'
+                                }`}
+                                title={u.id === user.id ? "Cannot delete yourself" : canDelete ? "Delete User" : `Food Chain Rule: Only the admin who created them (${creatorEmail}) can delete them`}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </motion.div>
           )}
@@ -1245,6 +1565,125 @@ const Dashboard = () => {
               </div>
             </motion.div>
           )}
+
+          {/* User management modal */}
+          <AnimatePresence>
+            {userModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setUserModalOpen(false)}
+                  className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                />
+
+                {/* Modal Container */}
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                  className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-premium p-8 z-10 space-y-6"
+                >
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-150 dark:border-slate-800">
+                    <h3 className="text-xl font-display font-extrabold text-slate-950 dark:text-white">
+                      {userForm.id ? 'Edit User Details' : 'Register New User'}
+                    </h3>
+                    <button 
+                      onClick={() => setUserModalOpen(false)}
+                      className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center transition-all"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveUser} className="space-y-5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        className="input-field !rounded-xl"
+                        placeholder="e.g. John Doe"
+                        value={userForm.fullName}
+                        onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        className="input-field !rounded-xl"
+                        placeholder="e.g. john@example.com"
+                        value={userForm.email}
+                        onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">User Role</label>
+                        <select
+                          className="input-field !rounded-xl"
+                          value={userForm.role}
+                          onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                        >
+                          <option value="tenant">Tenant</option>
+                          <option value="landlord">Landlord</option>
+                          <option value="admin">Super Admin</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col justify-end pb-3 pl-2">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input 
+                            type="checkbox"
+                            className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                            checked={userForm.active}
+                            onChange={(e) => setUserForm({ ...userForm, active: e.target.checked })}
+                          />
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-350">Active Status</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                        Password {userForm.id && '(Leave blank to preserve current)'}
+                      </label>
+                      <input 
+                        type="password" 
+                        required={!userForm.id}
+                        className="input-field !rounded-xl"
+                        placeholder={userForm.id ? "Optional security update" : "Minimum 6 characters"}
+                        value={userForm.password}
+                        onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-800">
+                      <button 
+                        type="button"
+                        onClick={() => setUserModalOpen(false)}
+                        className="btn-secondary !rounded-[1.2rem] !py-2.5 !px-6 text-xs font-bold active:scale-95"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit"
+                        className="btn-primary !rounded-[1.2rem] !py-2.5 !px-8 text-xs font-bold active:scale-95 bg-primary-600 text-white hover:bg-primary-700"
+                      >
+                        {userForm.id ? 'Save Changes' : 'Register User'}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
 
         </div>
       </main>

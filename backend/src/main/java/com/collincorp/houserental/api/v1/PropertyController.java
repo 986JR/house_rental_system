@@ -75,6 +75,11 @@ public class PropertyController {
         return propertyService.update(id, request);
     }
 
+    @PutMapping("/{id}/approve")
+    public PropertyResponse approve(@PathVariable long id, @RequestParam boolean approved) {
+        return propertyService.approve(id, approved);
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable long id) {
         propertyService.delete(id);

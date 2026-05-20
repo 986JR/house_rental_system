@@ -1,6 +1,7 @@
 package com.collincorp.houserental.service;
 
 import com.collincorp.houserental.api.ApiException;
+import com.collincorp.houserental.domain.LogAction;
 import com.collincorp.houserental.domain.PropertyAvailability;
 import com.collincorp.houserental.domain.UserRole;
 import com.collincorp.houserental.dto.PropertyCreateRequest;
@@ -31,11 +32,13 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final StorageService storageService;
     private final BookingService bookingService;
+    private final LogService logService;
 
-    public PropertyService(PropertyRepository propertyRepository, StorageService storageService, BookingService bookingService) {
+    public PropertyService(PropertyRepository propertyRepository, StorageService storageService, BookingService bookingService, LogService logService) {
         this.propertyRepository = propertyRepository;
         this.storageService = storageService;
         this.bookingService = bookingService;
+        this.logService = logService;
     }
 
     @Transactional(readOnly = true)
@@ -54,7 +57,14 @@ public class PropertyService {
             PropertyAvailability availability,
             Pageable pageable) {
 
-        Specification<PropertyEntity> spec = buildSpec(location, maxPrice, minRooms, availability);
+        boolean isAdmin = false;
+        try {
+            isAdmin = SecurityUtils.currentUser().getRole() == UserRole.admin;
+        } catch (Exception e) {
+            // Unauthenticated guest or regular user
+        }
+
+        Specification<PropertyEntity> spec = buildSpec(location, maxPrice, minRooms, availability, isAdmin);
         return propertyRepository.findAll(spec, pageable).map(this::toResponse);
     }
 
@@ -82,7 +92,10 @@ public class PropertyService {
         p.setAvailability(req.availability() != null ? req.availability() : PropertyAvailability.available);
         p.setPhone(req.phone());
         p.setContactEmail(req.contactEmail());
-        return toResponse(propertyRepository.save(p));
+        p.setApproved(user.getRole() == UserRole.admin); // Admin creations are auto-approved
+        PropertyEntity saved = propertyRepository.save(p);
+        logService.log(LogAction.PROPERTY_CREATED, "property", saved.getId(), "Created property listing: " + saved.getTitle());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -115,7 +128,9 @@ public class PropertyService {
         if (req.contactEmail() != null) {
             p.setContactEmail(req.contactEmail());
         }
-        return toResponse(p);
+        PropertyEntity saved = propertyRepository.save(p);
+        logService.log(LogAction.PROPERTY_UPDATED, "property", saved.getId(), "Updated property listing details: " + saved.getTitle());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -124,7 +139,24 @@ public class PropertyService {
                 .findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "property_not_found"));
         assertOwnerOrAdmin(p);
+        String title = p.getTitle();
         propertyRepository.delete(p);
+        logService.log(LogAction.PROPERTY_DELETED, "property", id, "Deleted property listing: " + title);
+    }
+
+    @Transactional
+    public PropertyResponse approve(long id, boolean approved) {
+        UserEntity user = SecurityUtils.currentUser();
+        if (user.getRole() != UserRole.admin) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "admin_only");
+        }
+        PropertyEntity p = propertyRepository
+                .findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "property_not_found"));
+        p.setApproved(approved);
+        PropertyEntity saved = propertyRepository.save(p);
+        logService.log(LogAction.PROPERTY_UPDATED, "property", saved.getId(), "Admin updated approval status to " + approved + " for property: " + saved.getTitle());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -185,6 +217,7 @@ public class PropertyService {
                 p.getPricePerMonth(),
                 p.getRooms(),
                 p.getAvailability().name(),
+                p.isApproved(),
                 p.getCreatedAt(),
                 imgs,
                 p.getPhone(),
@@ -193,7 +226,7 @@ public class PropertyService {
     }
 
     private static Specification<PropertyEntity> buildSpec(
-            String location, BigDecimal maxPrice, Integer minRooms, PropertyAvailability availability) {
+            String location, BigDecimal maxPrice, Integer minRooms, PropertyAvailability availability, boolean isAdmin) {
         return (root, query, cb) -> {
             List<Predicate> parts = new ArrayList<>();
             if (StringUtils.hasText(location)) {
@@ -207,6 +240,9 @@ public class PropertyService {
             }
             if (availability != null) {
                 parts.add(cb.equal(root.get("availability"), availability));
+            }
+            if (!isAdmin) {
+                parts.add(cb.equal(root.get("approved"), true));
             }
             if (parts.isEmpty()) {
                 return cb.conjunction();

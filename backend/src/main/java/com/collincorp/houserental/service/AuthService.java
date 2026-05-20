@@ -1,6 +1,7 @@
 package com.collincorp.houserental.service;
 
 import com.collincorp.houserental.api.ApiException;
+import com.collincorp.houserental.domain.LogAction;
 import com.collincorp.houserental.domain.UserRole;
 import com.collincorp.houserental.dto.LoginRequest;
 import com.collincorp.houserental.dto.ProfileUpdateRequest;
@@ -22,11 +23,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LogService logService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, LogService logService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.logService = logService;
     }
 
     @Transactional
@@ -44,18 +47,28 @@ public class AuthService {
         u.setFullName(req.fullName());
         u.setRole(role);
         userRepository.save(u);
+        logService.log(LogAction.USER_CREATED, "user", u.getId(), u.getId(), u.getEmail(), "User registered successfully");
         return toUser(u);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest req) {
-        UserEntity u = userRepository
-                .findByEmailIgnoreCase(req.email().trim().toLowerCase())
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials"));
-        if (!u.isActive() || !passwordEncoder.matches(req.password(), u.getPasswordHash())) {
+        String email = req.email().trim().toLowerCase();
+        UserEntity u = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        if (u == null) {
+            logService.log(LogAction.LOGIN, "user", null, null, email, "Failed login attempt: user not found");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials");
+        }
+        if (!u.isActive()) {
+            logService.log(LogAction.LOGIN, "user", u.getId(), u.getId(), u.getEmail(), "Failed login attempt: account inactive");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials");
+        }
+        if (!passwordEncoder.matches(req.password(), u.getPasswordHash())) {
+            logService.log(LogAction.LOGIN, "user", u.getId(), u.getId(), u.getEmail(), "Failed login attempt: incorrect password");
             throw new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials");
         }
         String token = jwtService.generateToken(u.getId(), u.getEmail(), u.getRole().name());
+        logService.log(LogAction.LOGIN, "user", u.getId(), u.getId(), u.getEmail(), "User logged in successfully");
         return TokenResponse.of(token, toUser(u));
     }
 
@@ -73,10 +86,12 @@ public class AuthService {
         if (req.password() != null && !req.password().isBlank()) {
             u.setPasswordHash(passwordEncoder.encode(req.password()));
         }
-        return toUser(userRepository.save(u));
+        userRepository.save(u);
+        logService.log(LogAction.USER_UPDATED, "user", u.getId(), u.getId(), u.getEmail(), "User updated profile details");
+        return toUser(u);
     }
 
     private static UserResponse toUser(UserEntity u) {
-        return new UserResponse(u.getId(), u.getEmail(), u.getFullName(), u.getRole().name());
+        return new UserResponse(u.getId(), u.getEmail(), u.getFullName(), u.getRole().name(), u.isActive(), u.getCreatedBy());
     }
 }

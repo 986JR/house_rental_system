@@ -50,6 +50,9 @@ public class PropertyEntity {
     @Column(nullable = false, length = 32)
     private PropertyAvailability availability = PropertyAvailability.available;
 
+    @Column(nullable = false)
+    private boolean approved = false;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -61,6 +64,14 @@ public class PropertyEntity {
 
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PropertyImageEntity> images = new ArrayList<>();
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
+    }
 
     public Long getId() {
         return id;

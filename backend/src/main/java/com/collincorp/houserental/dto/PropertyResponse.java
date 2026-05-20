@@ -14,6 +14,7 @@ public record PropertyResponse(
         BigDecimal pricePerMonth,
         int rooms,
         String availability,
+        boolean approved,
         Instant createdAt,
         List<PropertyImageResponse> images,
         String phone,

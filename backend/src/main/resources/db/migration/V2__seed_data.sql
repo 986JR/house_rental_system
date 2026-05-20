@@ -1,10 +1,10 @@
 -- Seed Users
 INSERT INTO users (email, password_hash, role, full_name, active) VALUES
-('admin@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'admin', 'Admin User', true),
-('landlord@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'landlord', 'Landlord One', true),
-('landlord2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'landlord','Landlord Two', true),
-('tenant@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'tenant', 'Tenant One', true),
-('tenant2@houserental.com', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOn2', 'tenant','Tenant Two', true);
+('admin@gmail.com', '$2a$10$CFX4KWygLmnGX1Ddl24MOOgJaA1xQc62f4n7kRX6BrQgD83Nk5OBC', 'admin', 'Default Admin', true),
+('landlord@houserental.com', '$2a$10$V7xezJNYxdZzjH3bhe/PMu7AQY6hHb4J2D4tW/1QPNx9QJvEB7wYG', 'landlord', 'Landlord One', true),
+('landlord2@houserental.com', '$2a$10$V7xezJNYxdZzjH3bhe/PMu7AQY6hHb4J2D4tW/1QPNx9QJvEB7wYG', 'landlord','Landlord Two', true),
+('tenant@houserental.com', '$2a$10$7aWOtr0n8/n5UDTYNwrGbeJ0V6TeGGlOI2gAlwKH7rfrTVnRx1gnm', 'tenant', 'Tenant One', true),
+('tenant2@houserental.com', '$2a$10$7aWOtr0n8/n5UDTYNwrGbeJ0V6TeGGlOI2gAlwKH7rfrTVnRx1gnm', 'tenant','Tenant Two', true);
 
 -- Seed Properties
 -- Assuming IDs 1 to 5 for users above

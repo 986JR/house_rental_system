@@ -1,3 +1,3 @@
 package com.collincorp.houserental.dto;
 
-public record UserResponse(long id, String email, String fullName, String role) {}
+public record UserResponse(long id, String email, String fullName, String role, boolean active, Long createdBy) {}

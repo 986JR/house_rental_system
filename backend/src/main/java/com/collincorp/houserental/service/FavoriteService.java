@@ -79,6 +79,7 @@ public class FavoriteService {
                 p.getPricePerMonth(),
                 p.getRooms(),
                 p.getAvailability().name(),
+                p.isApproved(),
                 p.getCreatedAt(),
                 imgs,
                 p.getPhone(),

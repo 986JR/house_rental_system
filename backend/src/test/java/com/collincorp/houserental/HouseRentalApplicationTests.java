@@ -11,3 +11,4 @@ class HouseRentalApplicationTests {
     @Test
     void contextLoads() {}
 }
+

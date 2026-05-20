@@ -35,8 +35,19 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "created_by")
+    private Long createdBy;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
 
     public Long getId() {
         return id;
