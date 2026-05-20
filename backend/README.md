@@ -102,15 +102,13 @@ npm run dev
 ```
 (Frontend will proxy API requests to `:8080`)
 
-## 🧪 Sample Data
+## Admin Account
 
-When running in `dev` profile, the system automatically seeds sample users:
+The system starts with only the predefined administrator account. Landlord and tenant users should be created from the registration page.
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin** | `admin@houserental.com` | `Admin@123` |
-| **Landlord** | `landlord@houserental.com` | `Landlord@123` |
-| **Tenant** | `tenant@houserental.com` | `Tenant@123` |
+| **Admin** | `admin@gmail.com` | `admin` |
 
 ---
 

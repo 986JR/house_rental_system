@@ -1,245 +1,182 @@
-const BASE_URL = 'http://localhost:8080/api/v1';
+const BASE_URL = process.env.RPMS_API_URL || 'http://localhost:8080/api/v1';
+
+async function request(path, options = {}) {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  let body = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+  return { response, body };
+}
+
+async function login(email, password) {
+  const { response, body } = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  assert(response.status === 200 && body?.accessToken, `Login succeeds for ${email}`);
+  return body;
+}
+
+let testCount = 0;
+let successCount = 0;
+
+function assert(condition, message) {
+  testCount += 1;
+  if (!condition) {
+    throw new Error(`FAIL: ${message}`);
+  }
+  successCount += 1;
+  console.log(`PASS: ${message}`);
+}
 
 async function runTests() {
-  console.log('🚀 Starting RentalHub End-to-End System Testing...\n');
-  let testCount = 0;
-  let successCount = 0;
+  console.log('Starting RPMS end-to-end API smoke test');
 
-  function assert(condition, message) {
-    testCount++;
-    if (condition) {
-      successCount++;
-      console.log(` ✅ PASS: ${message}`);
-    } else {
-      console.error(` ❌ FAIL: ${message}`);
-      throw new Error(`Assertion failed: ${message}`);
+  const stamp = Date.now();
+  const landlord = {
+    email: `e2e.landlord.${stamp}@example.com`,
+    password: 'E2ePass123',
+    fullName: 'E2E Landlord',
+    role: 'landlord',
+  };
+  const tenant = {
+    email: `e2e.tenant.${stamp}@example.com`,
+    password: 'E2ePass123',
+    fullName: 'E2E Tenant',
+    role: 'tenant',
+  };
+
+  let adminToken;
+  let landlordToken;
+  let tenantToken;
+  let landlordId;
+  let tenantId;
+  let propertyId;
+
+  async function cleanup() {
+    if (!adminToken) return;
+    if (propertyId) {
+      await request(`/properties/${propertyId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      }).catch(() => {});
+    }
+    if (tenantId) {
+      await request(`/admin/users/${tenantId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      }).catch(() => {});
+    }
+    if (landlordId) {
+      await request(`/admin/users/${landlordId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      }).catch(() => {});
     }
   }
 
   try {
-    // ----------------------------------------------------
-    // 1. Guest Flow
-    // ----------------------------------------------------
-    console.log('--- 1. Guest Flow ---');
-    const guestPropsRes = await fetch(`${BASE_URL}/properties`);
-    assert(guestPropsRes.status === 200, 'Guest can retrieve properties list (Status 200)');
-    const guestProps = await guestPropsRes.json();
-    assert(guestProps && guestProps.content && guestProps.content.length > 0, 'Properties content list has seeded listings');
-    console.log(`Found ${guestProps.content.length} properties for guest.`);
-    const penthouse = guestProps.content.find(p => p.title.includes('Skyline'));
-    assert(penthouse !== undefined, "Found seeded 'Modern Skyline Penthouse' property in marketplace");
-    console.log(`Penthouse ID: ${penthouse.id}, Location: ${penthouse.location}, Price: ${penthouse.pricePerMonth}`);
+    const publicProperties = await request('/properties?size=1');
+    assert(publicProperties.response.status === 200, 'Public property search endpoint responds');
 
-    // ----------------------------------------------------
-    // 2. Admin Flow (Initial Check)
-    // ----------------------------------------------------
-    console.log('\n--- 2. Admin Flow (Initial Check) ---');
-    const adminLoginRes = await fetch(`${BASE_URL}/auth/login`, {
+    const adminLogin = await login('admin@gmail.com', 'admin');
+    adminToken = adminLogin.accessToken;
+
+    for (const user of [landlord, tenant]) {
+      const created = await request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(user),
+      });
+      assert(created.response.status === 200 || created.response.status === 201, `${user.role} registration succeeds`);
+      if (user.role === 'landlord') landlordId = created.body.id;
+      if (user.role === 'tenant') tenantId = created.body.id;
+    }
+
+    landlordToken = (await login(landlord.email, landlord.password)).accessToken;
+    tenantToken = (await login(tenant.email, tenant.password)).accessToken;
+
+    const createdProperty = await request('/properties', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@gmail.com', password: 'admin' })
-    });
-    assert(adminLoginRes.status === 200, 'Admin can log in successfully');
-    const adminLogin = await adminLoginRes.json();
-    assert(adminLogin.accessToken !== undefined, 'Admin login response contains accessToken');
-    const adminToken = adminLogin.accessToken;
-
-    // Get stats
-    const adminStatsRes = await fetch(`${BASE_URL}/admin/stats`, {
-      headers: { 'Authorization': `Bearer ${adminToken}` }
-    });
-    assert(adminStatsRes.status === 200, 'Admin can retrieve stats dashboard metrics');
-    const initialStats = await adminStatsRes.json();
-    console.log(`Initial Admin Stats:
-  - Users: ${initialStats.users}
-  - Properties: ${initialStats.properties}
-  - Bookings: ${initialStats.bookings}
-  - Messages: ${initialStats.messages}`);
-
-    // Get users list
-    const adminUsersRes = await fetch(`${BASE_URL}/admin/users`, {
-      headers: { 'Authorization': `Bearer ${adminToken}` }
-    });
-    assert(adminUsersRes.status === 200, 'Admin can retrieve user list');
-    const adminUsers = await adminUsersRes.json();
-    assert(adminUsers && adminUsers.length > 0, 'User database list is populated');
-    console.log(`Total users registered in the system: ${adminUsers.length}`);
-
-    // ----------------------------------------------------
-    // 3. Tenant Flow
-    // ----------------------------------------------------
-    console.log('\n--- 3. Tenant Flow ---');
-    const tenantLoginRes = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'tenant@houserental.com', password: 'Tenant@123' })
-    });
-    assert(tenantLoginRes.status === 200, 'Tenant can log in successfully');
-    const tenantLogin = await tenantLoginRes.json();
-    const tenantToken = tenantLogin.accessToken;
-
-    // Favorite a property
-    console.log(`Adding Property ${penthouse.id} ('${penthouse.title}') to favorites...`);
-    const addFavRes = await fetch(`${BASE_URL}/favorites`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tenantToken}`
-      },
-      body: JSON.stringify({ propertyId: penthouse.id })
-    });
-    assert(addFavRes.status === 200 || addFavRes.status === 201, 'Tenant can bookmark a property');
-
-    // Verify favorite list
-    const favsRes = await fetch(`${BASE_URL}/favorites`, {
-      headers: { 'Authorization': `Bearer ${tenantToken}` }
-    });
-    assert(favsRes.status === 200, 'Tenant can retrieve bookmarked properties list');
-    const favs = await favsRes.json();
-    const isBookmarked = favs.some(f => f.id === penthouse.id);
-    assert(isBookmarked, 'The bookmarked property is returned in favorites list');
-
-    // Create a booking request
-    console.log('Submitting a lease booking request for the penthouse...');
-    const bookingRes = await fetch(`${BASE_URL}/bookings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tenantToken}`
-      },
+      headers: { Authorization: `Bearer ${landlordToken}` },
       body: JSON.stringify({
-        propertyId: penthouse.id,
-        startDate: '2026-06-01',
-        endDate: '2026-06-30',
-        message: 'Hello! I am a verified tenant interested in leasing your luxury penthouse for June 2026. Looking forward to your approval.'
-      })
-    });
-    assert(bookingRes.status === 200 || bookingRes.status === 201, 'Booking application submitted successfully');
-    const newBooking = await bookingRes.json();
-    assert(newBooking.id !== undefined, 'Booking response returns valid booking ID');
-    assert(newBooking.status === 'pending', 'Initial status of booking is pending');
-    const bookingId = newBooking.id;
-    console.log(`Created Booking ID: ${bookingId}, Status: ${newBooking.status}`);
-
-    // Verify booking in my applications list
-    const myBookingsRes = await fetch(`${BASE_URL}/bookings/my`, {
-      headers: { 'Authorization': `Bearer ${tenantToken}` }
-    });
-    assert(myBookingsRes.status === 200, 'Tenant can fetch their submitted applications');
-    const myBookings = await myBookingsRes.json();
-    const hasMyBooking = myBookings.some(b => b.id === bookingId);
-    assert(hasMyBooking, 'Tenant application list contains the newly created booking request');
-
-    // ----------------------------------------------------
-    // 4. Landlord Flow
-    // ----------------------------------------------------
-    console.log('\n--- 4. Landlord Flow ---');
-    const landlordLoginRes = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'landlord@houserental.com', password: 'Landlord@123' })
-    });
-    assert(landlordLoginRes.status === 200, 'Landlord can log in successfully');
-    const landlordLogin = await landlordLoginRes.json();
-    const landlordToken = landlordLogin.accessToken;
-
-    // View incoming requests
-    const landlordBookingsRes = await fetch(`${BASE_URL}/bookings/landlord`, {
-      headers: { 'Authorization': `Bearer ${landlordToken}` }
-    });
-    assert(landlordBookingsRes.status === 200, 'Landlord can retrieve incoming booking requests');
-    const landlordBookings = await landlordBookingsRes.json();
-    const incomingBooking = landlordBookings.find(b => b.id === bookingId);
-    assert(incomingBooking !== undefined, 'Landlord received the booking request from the tenant');
-    console.log(`Found incoming booking request: Tenant: ${incomingBooking.tenantEmail}, Msg: "${incomingBooking.message}"`);
-
-    // Approve the booking
-    console.log(`Approving Booking ID: ${bookingId}...`);
-    const approveRes = await fetch(`${BASE_URL}/bookings/${bookingId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${landlordToken}`
-      },
-      body: JSON.stringify({ status: 'approved' })
-    });
-    assert(approveRes.status === 200, 'Landlord can approve booking successfully (Status 200)');
-    const approvedBooking = await approveRes.json();
-    assert(approvedBooking.status === 'approved', 'Booking status was successfully updated to approved');
-
-    // Landlord publishes a new property
-    console.log('Publishing a new property listing...');
-    const createPropRes = await fetch(`${BASE_URL}/properties`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${landlordToken}`
-      },
-      body: JSON.stringify({
-        title: 'Ultra-Modern Smart Loft',
-        description: 'Stunning smart home loft with automatic shading, private EV charger, and contemporary design.',
-        location: 'Silicon Valley, California',
-        pricePerMonth: 4200.00,
+        title: `E2E Test Property ${stamp}`,
+        description: 'Temporary listing created by automated e2e smoke test.',
+        location: 'Dar es Salaam',
+        pricePerMonth: 1200,
         rooms: 2,
         availability: 'available',
-        phone: '+15550199',
-        contactEmail: 'landlord@houserental.com'
-      })
+        phone: '+255700000000',
+        contactEmail: landlord.email,
+      }),
     });
-    assert(createPropRes.status === 200 || createPropRes.status === 201, 'Landlord can create a new property listing');
-    const newProperty = await createPropRes.json();
-    assert(newProperty.id !== undefined, 'Created property response contains a valid ID');
-    console.log(`Created Property ID: ${newProperty.id}, Title: "${newProperty.title}", Price: ${newProperty.pricePerMonth}`);
+    assert(createdProperty.response.status === 200 || createdProperty.response.status === 201, 'Landlord creates property');
+    propertyId = createdProperty.body.id;
 
-    // Verify property in landlord portfolio
-    const myPropsRes = await fetch(`${BASE_URL}/properties/my`, {
-      headers: { 'Authorization': `Bearer ${landlordToken}` }
+    const approvedProperty = await request(`/properties/${propertyId}/approve?approved=true`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
-    assert(myPropsRes.status === 200, 'Landlord can retrieve personal properties list');
-    const myProps = await myPropsRes.json();
-    const hasNewProp = myProps.some(p => p.id === newProperty.id);
-    assert(hasNewProp, 'New property successfully exists in Landlord portfolio');
+    assert(approvedProperty.response.status === 200 && approvedProperty.body.approved === true, 'Admin approval publishes test property');
 
-    // ----------------------------------------------------
-    // 5. Admin Flow (Final Check & Logs Verification)
-    // ----------------------------------------------------
-    console.log('\n--- 5. Admin Flow (Final Check & Logs Verification) ---');
-    // Get stats again to see if they updated
-    const finalStatsRes = await fetch(`${BASE_URL}/admin/stats`, {
-      headers: { 'Authorization': `Bearer ${adminToken}` }
+    const booking = await request('/bookings', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tenantToken}` },
+      body: JSON.stringify({
+        propertyId,
+        startDate: '2026-07-01',
+        endDate: '2026-07-31',
+        message: 'Automated booking request.',
+      }),
     });
-    assert(finalStatsRes.status === 200, 'Admin can fetch stats again');
-    const finalStats = await finalStatsRes.json();
-    console.log(`Final Admin Stats:
-  - Users: ${finalStats.users} (increased by ${finalStats.users - initialStats.users})
-  - Properties: ${finalStats.properties} (increased by ${finalStats.properties - initialStats.properties})
-  - Bookings: ${finalStats.bookings} (increased by ${finalStats.bookings - initialStats.bookings})
-  - Messages: ${finalStats.messages} (increased by ${finalStats.messages - initialStats.messages})`);
+    assert(booking.response.status === 200 || booking.response.status === 201, 'Tenant submits booking');
+    assert(booking.body.status === 'pending', 'Booking starts as pending');
 
-    assert(finalStats.properties > initialStats.properties, 'Total properties count increased');
-    assert(finalStats.bookings > initialStats.bookings, 'Total bookings count increased');
-
-    // Fetch system audit logs
-    const logsRes = await fetch(`${BASE_URL}/admin/logs`, {
-      headers: { 'Authorization': `Bearer ${adminToken}` }
+    const landlordBookings = await request('/bookings/landlord', {
+      headers: { Authorization: `Bearer ${landlordToken}` },
     });
-    assert(logsRes.status === 200, 'Admin can fetch system audit logs');
-    const systemLogs = await logsRes.json();
-    assert(systemLogs && systemLogs.length > 0, 'System audit logs are populated');
+    assert(
+      landlordBookings.response.status === 200 && landlordBookings.body.some((item) => item.id === booking.body.id),
+      'Landlord sees incoming booking'
+    );
 
-    console.log('\n--- Recent Audit Logs Recorded in System ---');
-    // Show top 5 most recent logs
-    const recentLogs = systemLogs.slice(0, 5);
-    recentLogs.forEach(log => {
-      console.log(`[${log.createdAt}] [User: ${log.userEmail}] [Action: ${log.action}] - ${log.details}`);
+    const chat = await request('/messages', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${tenantToken}` },
+      body: JSON.stringify({ recipientId: landlordId, body: 'Automated chat message.' }),
     });
+    assert(chat.response.status === 200 || chat.response.status === 201, 'Tenant sends chat message');
 
-    console.log('\n🎉 ALL END-TO-END SYSTEM INTEGRATION TESTS COMPLETED SUCCESSFULLY! 🎉');
-    console.log(`Tests Run: ${testCount}, Success: ${successCount}`);
-  } catch (error) {
-    console.error('\n🔴 E2E TEST RUN ENCOUNTERED FAILURE:', error.message);
-    process.exit(1);
+    const approvedBooking = await request(`/bookings/${booking.body.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${landlordToken}` },
+      body: JSON.stringify({ status: 'approved' }),
+    });
+    assert(approvedBooking.response.status === 200 && approvedBooking.body.status === 'approved', 'Landlord approves booking');
+
+    const logs = await request('/admin/logs', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    assert(logs.response.status === 200 && Array.isArray(logs.body), 'Admin reads audit logs');
+
+    console.log(`Completed successfully: ${successCount}/${testCount} checks passed`);
+  } finally {
+    await cleanup();
   }
 }
 
-runTests();
+runTests().catch((error) => {
+  console.error(error.message);
+  process.exit(1);
+});

@@ -358,17 +358,13 @@ Your application will be served at [http://localhost:8080](http://localhost:8080
 
 ---
 
-## 🧪 Pre-Seeded Accounts for Immediate Testing
+## Admin Account
 
-The PostgreSQL database is pre-seeded with active functional users. You can immediately log in and explore using the following pre-seeded credentials:
+The PostgreSQL database starts fresh with only the predefined administrator account. Create landlord and tenant users through the registration page before testing role-specific workflows.
 
 | Functional Role | Username / Email | Plaintext Password |
 | :--- | :--- | :--- |
-| **🛡️ System Admin** | `admin@houserental.com` | `Admin@123` |
-| **🏡 Verified Host (Landlord)** | `landlord@houserental.com` | `Landlord@123` |
-| **🏡 Backup Landlord** | `landlord2@houserental.com` | `Landlord@123` *(same hash)* |
-| **🔑 Elite Renter (Tenant)** | `tenant@houserental.com` | `Tenant@123` |
-| **🔑 Backup Tenant** | `tenant2@houserental.com` | `Tenant@123` *(same hash)* |
+| **System Admin** | `admin@gmail.com` | `admin` |
 
 ---
 *Developed with ❤️ by The_Agaba. Designed for visual and operational excellence.*

@@ -22,7 +22,7 @@ const Manual = () => {
     { id: 'database', label: 'Database Entity Model' },
     { id: 'api', label: 'REST API Endpoints' },
     { id: 'quickstart', label: 'Setup & Deployment' },
-    { id: 'credentials', label: 'Seeded Accounts' },
+    { id: 'credentials', label: 'Admin Account' },
   ];
 
   const handlePrint = () => {
@@ -482,14 +482,14 @@ java -jar target/house_rental-0.0.1-SNAPSHOT.jar`}
             </section>
 
 
-            {/* 10. Seeded Accounts */}
+          {/* 10. Admin Account */}
             <section id="credentials" className="space-y-6 scroll-mt-24 border-t border-slate-100 dark:border-slate-800/80 pt-16">
               <h2 className="text-2xl font-bold text-slate-950 dark:text-white flex items-center gap-2">
                 <span className="w-1.5 h-6 bg-primary-600 rounded-full inline-block" />
-                9. Pre-Seeded Accounts Matrix
+                9. Admin Account
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Use the following credentials in the dev environment for testing:
+                The app starts fresh with only the administrator predefined. Create landlord and tenant accounts from the registration page.
               </p>
 
               <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -503,19 +503,9 @@ java -jar target/house_rental-0.0.1-SNAPSHOT.jar`}
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-350">
                     <tr>
-                      <td className="p-3">🛡️ System Admin</td>
-                      <td className="p-3 font-mono">admin@houserental.com</td>
-                      <td className="p-3 font-mono">Admin@123</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3">🏡 Verified Host (Landlord)</td>
-                      <td className="p-3 font-mono">landlord@houserental.com</td>
-                      <td className="p-3 font-mono">Landlord@123</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3">🔑 Elite Renter (Tenant)</td>
-                      <td className="p-3 font-mono">tenant@houserental.com</td>
-                      <td className="p-3 font-mono">Tenant@123</td>
+                      <td className="p-3">System Admin</td>
+                      <td className="p-3 font-mono">admin@gmail.com</td>
+                      <td className="p-3 font-mono">admin</td>
                     </tr>
                   </tbody>
                 </table>
