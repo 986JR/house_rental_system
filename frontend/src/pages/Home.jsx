@@ -93,7 +93,7 @@ const Home = () => {
           {/* badge */}
           <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-xs">
             <Star size={13} className="text-amber-400 fill-amber-400" />
-            Trusted by 10,000+ Renters
+            Verified property marketplace
           </div>
 
           {/* title */}
@@ -124,8 +124,8 @@ const Home = () => {
             <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 sm:px-8 sm:py-5 grid grid-cols-3 divide-x divide-white/10 text-white shadow-2xl">
               {[
                 { v: activeListingsCount > 0 ? `${activeListingsCount}` : "0", l: "Active Listings" },
-                { v: activeListingsCount > 0 ? `${Math.max(activeListingsCount * 5, 24)}` : "0", l: "Happy Tenants" },
-                { v: activeListingsCount > 0 ? `${Math.max(Math.ceil(activeListingsCount * 0.4), 8)}` : "0", l: "Verified Owners" }
+                { v: `${featured.length}`, l: "Featured Homes" },
+                { v: activeListingsCount > 0 ? "Live" : "New", l: "Marketplace" }
               ].map((s, idx) => (
                   <div key={s.l} className={`text-center ${idx > 0 ? 'pl-2 sm:pl-4' : ''} ${idx < 2 ? 'pr-2 sm:pr-4' : ''}`}>
                     <div className="text-lg sm:text-2xl font-extrabold tracking-tight">{s.v}</div>

@@ -30,12 +30,18 @@ import org.springframework.web.multipart.MultipartFile;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final com.collincorp.houserental.repository.PropertyImageRepository propertyImageRepository;
     private final StorageService storageService;
     private final BookingService bookingService;
     private final LogService logService;
 
-    public PropertyService(PropertyRepository propertyRepository, StorageService storageService, BookingService bookingService, LogService logService) {
+    public PropertyService(PropertyRepository propertyRepository, 
+                           com.collincorp.houserental.repository.PropertyImageRepository propertyImageRepository,
+                           StorageService storageService, 
+                           BookingService bookingService, 
+                           LogService logService) {
         this.propertyRepository = propertyRepository;
+        this.propertyImageRepository = propertyImageRepository;
         this.storageService = storageService;
         this.bookingService = bookingService;
         this.logService = logService;
@@ -73,6 +79,21 @@ public class PropertyService {
         PropertyEntity p = propertyRepository
                 .findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "property_not_found"));
+        if (!p.isApproved()) {
+            try {
+                UserEntity user = SecurityUtils.currentUser();
+                boolean admin = user.getRole() == UserRole.admin;
+                boolean owner = p.getLandlord().getId().equals(user.getId());
+                if (!admin && !owner) {
+                    throw new ApiException(HttpStatus.NOT_FOUND, "property_not_found");
+                }
+            } catch (ApiException ex) {
+                if (ex.getStatus() == HttpStatus.UNAUTHORIZED) {
+                    throw new ApiException(HttpStatus.NOT_FOUND, "property_not_found");
+                }
+                throw ex;
+            }
+        }
         return toResponse(p);
     }
 
@@ -128,6 +149,9 @@ public class PropertyService {
         if (req.contactEmail() != null) {
             p.setContactEmail(req.contactEmail());
         }
+        if (SecurityUtils.currentUser().getRole() != UserRole.admin) {
+            p.setApproved(false);
+        }
         PropertyEntity saved = propertyRepository.save(p);
         logService.log(LogAction.PROPERTY_UPDATED, "property", saved.getId(), "Updated property listing details: " + saved.getTitle());
         return toResponse(saved);
@@ -171,10 +195,11 @@ public class PropertyService {
             String path = storageService.store(file);
             PropertyImageEntity img = new PropertyImageEntity();
             img.setFilePath(path);
-            p.addImage(img);
+            img.setProperty(p);
+            img = propertyImageRepository.save(img);
+            p.getImages().add(img);
             responses.add(new PropertyImageResponse(img.getId(), img.getFilePath()));
         }
-        propertyRepository.save(p);
         return responses;
     }
 
@@ -187,8 +212,9 @@ public class PropertyService {
         String path = storageService.store(file);
         PropertyImageEntity img = new PropertyImageEntity();
         img.setFilePath(path);
-        p.addImage(img);
-        propertyRepository.save(p);
+        img.setProperty(p);
+        img = propertyImageRepository.save(img);
+        p.getImages().add(img);
         return new PropertyImageResponse(img.getId(), img.getFilePath());
     }
 

@@ -70,9 +70,13 @@ const PropertyForm = () => {
       toast.error('Some files exceed the 5MB limit');
     }
 
-    setImages(prev => [...prev, ...validFiles]);
-    const filePreviews = validFiles.map(file => URL.createObjectURL(file));
-    setPreviews(prev => [...prev, ...filePreviews]);
+    const newFilesWithPreviews = validFiles.map(file => {
+      file.preview = URL.createObjectURL(file);
+      return file;
+    });
+
+    setImages(prev => [...prev, ...newFilesWithPreviews]);
+    setPreviews(prev => [...prev, ...newFilesWithPreviews.map(f => f.preview)]);
   };
 
   const removeImage = (index) => {
@@ -80,7 +84,7 @@ const PropertyForm = () => {
     const previewToRemove = previews[index];
     if (previewToRemove.startsWith('blob:')) {
        URL.revokeObjectURL(previewToRemove);
-       const imageIndex = images.findIndex(img => URL.createObjectURL(img) === previewToRemove);
+       const imageIndex = images.findIndex(img => img.preview === previewToRemove);
        if (imageIndex > -1) {
           const updatedImages = [...images];
           updatedImages.splice(imageIndex, 1);
@@ -114,7 +118,8 @@ const PropertyForm = () => {
       toast.success(id ? 'Listing updated successfully!' : 'Listing published to marketplace!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to save listing');
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || err.response?.data?.message || 'Failed to save listing';
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }

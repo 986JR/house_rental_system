@@ -9,7 +9,7 @@ import {
   ArrowUpRight, Clock, Star, ShieldCheck, DollarSign, Percent, 
   Activity, CheckCircle2, User, KeyRound, Mail, Sparkles, HelpCircle,
   Menu, X, LogOut, ChevronDown, Award, Search, Play, Pause, Square,
-  Sun, Moon
+  Sun, Moon, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -288,13 +288,15 @@ const WavyTimeTracker = () => {
 
 const Dashboard = () => {
   const { user, updateProfile, logout } = useAuth();
-  const [data, setData] = useState({ properties: [], bookings: [], logs: [], users: [] });
+  const [data, setData] = useState({ properties: [], bookings: [], logs: [], users: [], marketplace: [], messages: [] });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
-  // Tab states: 'overview' | 'listings' | 'bookings' | 'settings' | 'logs' | 'users'
+  // Tab states: 'overview' | 'listings' | 'bookings' | 'settings' | 'logs' | 'users' | 'marketplace'
   const [activeTab, setActiveTab] = useState('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [chatDrafts, setChatDrafts] = useState({});
+  const [sendingChatId, setSendingChatId] = useState(null);
 
   // User management modal states
   const [userModalOpen, setUserModalOpen] = useState(false);
@@ -317,39 +319,49 @@ const Dashboard = () => {
   const fetchDashboardDataBackground = async () => {
     try {
       if (user.role === 'admin') {
-        const [propRes, bookRes, logsRes, usersRes] = await Promise.all([
-          axios.get('/properties'),
+        const [propRes, bookRes, logsRes, usersRes, msgRes] = await Promise.all([
+          axios.get('/properties?size=1000'),
           axios.get('/admin/bookings'),
           axios.get('/admin/logs'),
-          axios.get('/admin/users')
+          axios.get('/admin/users'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: logsRes.data || [],
-          users: usersRes.data || []
+          users: usersRes.data || [],
+          marketplace: [],
+          messages: msgRes.data || []
         });
       } else if (user.role === 'landlord') {
-        const [propRes, bookRes] = await Promise.all([
+        const [propRes, bookRes, marketRes, msgRes] = await Promise.all([
           axios.get('/properties/my'),
-          axios.get('/bookings/landlord')
+          axios.get('/bookings/landlord'),
+          axios.get('/properties?size=1000'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: [],
-          users: []
+          users: [],
+          marketplace: marketRes.data.content || marketRes.data || [],
+          messages: msgRes.data || []
         });
       } else {
-        const [bookRes, propRes] = await Promise.all([
+        const [bookRes, propRes, msgRes] = await Promise.all([
           axios.get('/bookings/my'),
-          axios.get('/properties')
+          axios.get('/properties?size=1000'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: [],
-          users: []
+          users: [],
+          marketplace: propRes.data.content || propRes.data || [],
+          messages: msgRes.data || []
         });
       }
     } catch (error) {
@@ -361,43 +373,53 @@ const Dashboard = () => {
     setLoading(true);
     try {
       if (user.role === 'admin') {
-        const [propRes, bookRes, logsRes, usersRes] = await Promise.all([
-          axios.get('/properties'),
+        const [propRes, bookRes, logsRes, usersRes, msgRes] = await Promise.all([
+          axios.get('/properties?size=1000'),
           axios.get('/admin/bookings'),
           axios.get('/admin/logs'),
-          axios.get('/admin/users')
+          axios.get('/admin/users'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: logsRes.data || [],
-          users: usersRes.data || []
+          users: usersRes.data || [],
+          marketplace: [],
+          messages: msgRes.data || []
         });
       } else if (user.role === 'landlord') {
-        const [propRes, bookRes] = await Promise.all([
+        const [propRes, bookRes, marketRes, msgRes] = await Promise.all([
           axios.get('/properties/my'),
-          axios.get('/bookings/landlord')
+          axios.get('/bookings/landlord'),
+          axios.get('/properties?size=1000'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: [],
-          users: []
+          users: [],
+          marketplace: marketRes.data.content || marketRes.data || [],
+          messages: msgRes.data || []
         });
       } else {
-        const [bookRes, propRes] = await Promise.all([
+        const [bookRes, propRes, msgRes] = await Promise.all([
           axios.get('/bookings/my'),
-          axios.get('/properties')
+          axios.get('/properties?size=1000'),
+          axios.get('/messages')
         ]);
         setData({ 
           properties: propRes.data.content || propRes.data || [], 
           bookings: bookRes.data || [], 
           logs: [],
-          users: []
+          users: [],
+          marketplace: propRes.data.content || propRes.data || [],
+          messages: msgRes.data || []
         });
       }
     } catch (error) {
-      setData({ properties: [], bookings: [], logs: [], users: [] });
+      setData({ properties: [], bookings: [], logs: [], users: [], marketplace: [], messages: [] });
     } finally {
       setTimeout(() => setLoading(false), 500);
     }
@@ -449,6 +471,17 @@ const Dashboard = () => {
       fetchDashboardData();
     } catch (err) {
       toast.error('Failed to update property approval status');
+    }
+  };
+
+  const handleDenyProperty = async (propertyId) => {
+    if (!window.confirm('Deny and remove this submitted listing?')) return;
+    try {
+      await axios.delete(`/properties/${propertyId}`);
+      toast.success('Property denied and removed');
+      fetchDashboardData();
+    } catch (err) {
+      toast.error('Failed to deny property');
     }
   };
 
@@ -535,6 +568,41 @@ const Dashboard = () => {
     }
   };
 
+  const getChatPartnerId = (book) => (
+    user.role === 'landlord' ? book.tenantId : book.landlordId
+  );
+
+  const getChatPartnerLabel = (book) => (
+    user.role === 'landlord' ? book.tenantEmail : book.landlordEmail
+  );
+
+  const getBookingMessages = (book) => {
+    const partnerId = getChatPartnerId(book);
+    if (!partnerId) return [];
+    return (data.messages || [])
+      .filter(msg =>
+        (msg.senderId === user.id && msg.recipientId === partnerId) ||
+        (msg.senderId === partnerId && msg.recipientId === user.id)
+      )
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  };
+
+  const handleSendChat = async (book) => {
+    const body = (chatDrafts[book.id] || '').trim();
+    const recipientId = getChatPartnerId(book);
+    if (!body || !recipientId) return;
+    setSendingChatId(book.id);
+    try {
+      const res = await axios.post('/messages', { recipientId, body });
+      setData(prev => ({ ...prev, messages: [...(prev.messages || []), res.data] }));
+      setChatDrafts(prev => ({ ...prev, [book.id]: '' }));
+    } catch (err) {
+      toast.error('Failed to send chat message');
+    } finally {
+      setSendingChatId(null);
+    }
+  };
+
   const handleLogoutClick = () => {
     logout();
     toast.success('Signed out successfully');
@@ -545,6 +613,9 @@ const Dashboard = () => {
     const list = [
       { id: 'overview', label: 'Dashboard', icon: Home },
     ];
+    if (user?.role !== 'admin') {
+      list.push({ id: 'marketplace', label: 'Marketplace', icon: Search });
+    }
     if (user?.role === 'landlord' || user?.role === 'admin') {
       list.push({ id: 'listings', label: 'Properties', icon: Building2 });
     }
@@ -936,52 +1007,98 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              {/* Conditional Row Layouts based on Role */}
               {user.role === 'admin' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* Column 1: Dynamic Bar Chart */}
-                  <div className="lg:col-span-6 flex flex-col">
-                    <StripedBarChart 
-                      title="System Inquiry Activity" 
-                      counts={bookingsCounts} 
-                      todayIndex={todayIndex} 
-                    />
-                  </div>
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Column 1: Dynamic Bar Chart */}
+                    <div className="lg:col-span-6 flex flex-col">
+                      <StripedBarChart 
+                        title="System Inquiry Activity" 
+                        counts={bookingsCounts} 
+                        todayIndex={todayIndex} 
+                      />
+                    </div>
 
-                  {/* Column 2: Recent Bookings */}
-                  <div className="lg:col-span-6 flex flex-col">
-                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
+                    {/* Column 2: Recent Bookings */}
+                    <div className="lg:col-span-6 flex flex-col">
+                      <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 w-full bg-white dark:bg-slate-900/60 h-full flex flex-col justify-between">
+                        <div className="flex justify-between items-center mb-6">
+                          <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Bookings</h4>
+                          <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
+                            Review All
+                          </button>
+                        </div>
+
+                        <div className="space-y-5">
+                          {data.bookings.slice(0, 4).map(book => {
+                            let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
+                            if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+                            return (
+                              <div key={book.id} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                    {book.tenantEmail?.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-slate-950 dark:text-white text-xs truncate">{book.tenantEmail}</p>
+                                    <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
+                                  </div>
+                                </div>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
+                                  {book.status}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {data.bookings.length === 0 && (
+                            <div className="text-center py-10 text-slate-400 text-xs italic">
+                              No active coordinate requests.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Row 2: Pending Property Approvals */}
+                  <div className="grid grid-cols-1">
+                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border border-amber-200 dark:border-amber-900/50 w-full bg-amber-50/30 dark:bg-amber-950/10">
                       <div className="flex justify-between items-center mb-6">
-                        <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Recent Bookings</h4>
-                        <button onClick={() => setActiveTab('bookings')} className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-widest">
-                          Review All
+                        <div className="flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+                          <h4 className="text-lg font-display font-extrabold text-slate-950 dark:text-white tracking-tight">Pending Property Reviews</h4>
+                        </div>
+                        <button onClick={() => setActiveTab('listings')} className="text-[10px] font-bold text-amber-600 hover:text-amber-700 uppercase tracking-widest">
+                          Manage Listings
                         </button>
                       </div>
 
-                      <div className="space-y-5">
-                        {data.bookings.slice(0, 4).map(book => {
-                          let statusColor = 'text-primary-600 bg-primary-50 dark:bg-primary-950/20';
-                          if (book.status === 'rejected') statusColor = 'text-slate-400 bg-slate-100 dark:bg-slate-800';
-                          return (
-                            <div key={book.id} className="flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
-                                  {book.tenantEmail?.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-bold text-slate-950 dark:text-white text-xs truncate">{book.tenantEmail}</p>
-                                  <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Lease: {book.propertyTitle}</p>
-                                </div>
-                              </div>
-                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0 ${statusColor}`}>
-                                {book.status}
-                              </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {data.properties.filter(p => !p.approved).slice(0, 3).map(prop => (
+                          <div key={prop.id} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                            <div>
+                              <p className="font-bold text-slate-950 dark:text-white text-sm mb-1 truncate">{prop.title}</p>
+                              <p className="text-[10px] text-slate-500 mb-4 truncate">{prop.location}</p>
                             </div>
-                          );
-                        })}
-                        {data.bookings.length === 0 && (
-                          <div className="text-center py-10 text-slate-400 text-xs italic">
-                            No active coordinate requests.
+                            <div className="grid grid-cols-2 gap-2">
+                              <button 
+                                onClick={() => handleApproveProperty(prop.id, true)}
+                                className="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleDenyProperty(prop.id)}
+                                className="py-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-xs font-bold transition-all shadow-sm dark:bg-slate-950 dark:hover:bg-rose-950/20 dark:border-rose-900/40"
+                              >
+                                Deny
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {data.properties.filter(p => !p.approved).length === 0 && (
+                          <div className="col-span-full text-center py-6 text-slate-400 text-xs italic">
+                            All properties have been reviewed and approved.
                           </div>
                         )}
                       </div>
@@ -1195,17 +1312,21 @@ const Dashboard = () => {
                           </span>
 
                           <div className="flex items-center gap-2">
-                            {user.role === 'admin' && (
-                              <button
-                                onClick={() => handleApproveProperty(prop.id, !prop.approved)}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm ${
-                                  prop.approved 
-                                    ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400' 
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                }`}
-                              >
-                                {prop.approved ? 'Leave it' : 'Add (Approve)'}
-                              </button>
+                            {user.role === 'admin' && !prop.approved && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveProperty(prop.id, true)}
+                                  className="px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => handleDenyProperty(prop.id)}
+                                  className="px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm bg-white hover:bg-rose-50 text-rose-600 border border-rose-100 dark:bg-slate-950 dark:hover:bg-rose-950/20 dark:border-rose-900/40"
+                                >
+                                  Deny
+                                </button>
+                              </>
                             )}
                             <Link to={`/properties/${prop.id}/edit`} className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-primary-600 transition-all shadow-sm hover:scale-105 active:scale-95">
                               <Edit3 size={16} />
@@ -1398,6 +1519,70 @@ const Dashboard = () => {
                               <strong className="text-slate-400">Lease Dates:</strong> {book.startDate} to {book.endDate}
                             </div>
                           </div>
+
+                          {user.role !== 'admin' && (
+                            <div className="mt-6 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950/50 overflow-hidden">
+                              <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In-App Chat</p>
+                                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                                    With {getChatPartnerLabel(book) || 'the other party'}
+                                  </p>
+                                </div>
+                                <MessageSquare size={16} className="text-primary-500 shrink-0" />
+                              </div>
+
+                              <div className="p-4 space-y-3 max-h-56 overflow-y-auto">
+                                {getBookingMessages(book).length > 0 ? (
+                                  getBookingMessages(book).map(msg => {
+                                    const mine = msg.senderId === user.id;
+                                    return (
+                                      <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[82%] rounded-2xl px-4 py-2 text-xs leading-relaxed ${
+                                          mine
+                                            ? 'bg-primary-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                                        }`}>
+                                          <p>{msg.body}</p>
+                                          <p className={`mt-1 text-[9px] ${mine ? 'text-primary-100' : 'text-slate-400'}`}>
+                                            {new Date(msg.createdAt).toLocaleString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <p className="text-center text-xs text-slate-400 italic py-5">
+                                    No chat messages yet.
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="p-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                                <input
+                                  type="text"
+                                  className="input-field !rounded-xl !py-2.5 text-xs"
+                                  placeholder="Type a message..."
+                                  value={chatDrafts[book.id] || ''}
+                                  onChange={(e) => setChatDrafts(prev => ({ ...prev, [book.id]: e.target.value }))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleSendChat(book);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendChat(book)}
+                                  disabled={sendingChatId === book.id || !(chatDrafts[book.id] || '').trim()}
+                                  className="w-11 h-11 rounded-xl bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center shrink-0 transition-all"
+                                >
+                                  {sendingChatId === book.id ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {user.role === 'landlord' && book.status === 'pending' && (
@@ -1482,6 +1667,83 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-10 text-slate-400">
                     <p className="font-medium italic">No security events found.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Active Tab: Settings */}
+          {activeTab === 'marketplace' && user.role !== 'admin' && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800/80 shadow-premium bg-white dark:bg-slate-900/60"
+            >
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-900/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                    <Search size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950 dark:text-white">Property Marketplace</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Browse available verified properties and submit coordinate requests.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8">
+                {data.marketplace.filter(p => p.approved).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {data.marketplace.filter(p => p.approved).map(prop => (
+                      <div 
+                        key={prop.id}
+                        className="group relative rounded-[2rem] bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-primary-500/40 p-5 transition-all duration-300 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-sm mb-4 bg-slate-100 dark:bg-slate-800">
+                            <img 
+                              src={prop.images?.[0]?.filePath || 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=600'} 
+                              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                              alt={prop.title}
+                            />
+                            <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-sm ${prop.availability === 'available' ? 'bg-primary-600 text-white' : 'bg-slate-500 text-white'}`}>
+                                ● {prop.availability}
+                              </span>
+                            </div>
+                            <div className="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-xl text-white font-bold text-xs">
+                              ${prop.pricePerMonth?.toLocaleString()}/mo
+                            </div>
+                          </div>
+
+                          <h4 className="font-bold text-lg mb-1.5 text-slate-950 dark:text-white line-clamp-1 group-hover:text-primary-600 transition-colors">{prop.title}</h4>
+                          <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 text-xs font-semibold uppercase tracking-wider mb-4">
+                            <MapPin size={12} className="text-primary-500 shrink-0" />
+                            <span className="line-clamp-1">{prop.location}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <Users size={12} className="text-primary-500" /> {prop.rooms} Rooms
+                          </span>
+                          <Link 
+                            to={`/properties/${prop.id}`} 
+                            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold uppercase tracking-wider hover:bg-primary-600 hover:text-white dark:hover:bg-primary-500 dark:hover:text-white transition-all shadow-sm"
+                          >
+                            View & Request
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 bg-slate-50/50 dark:bg-slate-900/10 rounded-[2rem]">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400">
+                      <Search size={32} />
+                    </div>
+                    <p className="text-slate-400 font-medium italic">No approved properties in the marketplace yet.</p>
                   </div>
                 )}
               </div>

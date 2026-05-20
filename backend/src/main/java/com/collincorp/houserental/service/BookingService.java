@@ -63,12 +63,21 @@ public class BookingService {
     @Transactional
     public BookingResponse create(BookingCreateRequest req) {
         UserEntity tenant = SecurityUtils.currentUser();
-        if (tenant.getRole() != UserRole.tenant && tenant.getRole() != UserRole.admin) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "tenant_role_required");
+        if (tenant.getRole() == null) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "role_required");
         }
         PropertyEntity property = propertyRepository
                 .findById(req.propertyId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "property_not_found"));
+        if (!property.isApproved()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "property_not_approved");
+        }
+        if (property.getAvailability() != PropertyAvailability.available) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "property_not_available");
+        }
+        if (property.getLandlord().getId().equals(tenant.getId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "cannot_book_own_property");
+        }
         if (!req.startDate().isBefore(req.endDate())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_date_range");
         }
@@ -129,6 +138,8 @@ public class BookingService {
                 b.getId(),
                 b.getProperty().getId(),
                 b.getProperty().getTitle(),
+                b.getProperty().getLandlord().getId(),
+                b.getProperty().getLandlord().getEmail(),
                 b.getTenant().getId(),
                 b.getTenant().getEmail(),
                 b.getStatus().name(),

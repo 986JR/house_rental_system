@@ -31,6 +31,9 @@ const PropertyDetail = () => {
   const [sending,  setSending]  = useState(false);
   const [liked,    setLiked]    = useState(false);
 
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -48,13 +51,21 @@ const PropertyDetail = () => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!user) { toast.error('Please log in to contact the landlord'); navigate('/login'); return; }
+    if (!startDate || !endDate) { toast.error('Please select start and end dates'); return; }
     setSending(true);
     try {
-      await axios.post('/messages', { recipientId: property.landlordId, body: message });
-      toast.success('Inquiry sent successfully!');
+      await axios.post('/bookings', { 
+        propertyId: property.id, 
+        startDate: startDate,
+        endDate: endDate,
+        message: message 
+      });
+      toast.success('Coordinate / Booking Request sent successfully!');
       setMessage('');
-    } catch {
-      toast.error('Failed to send — please try again');
+      setStartDate('');
+      setEndDate('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send — please try again');
     } finally {
       setSending(false);
     }
@@ -249,6 +260,28 @@ const PropertyDetail = () => {
               ) : (
                 <>
                   <form onSubmit={handleSend} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Move-In</label>
+                        <input 
+                          type="date"
+                          required
+                          className="input-field py-3 text-xs"
+                          value={startDate}
+                          onChange={e => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Move-Out</label>
+                        <input 
+                          type="date"
+                          required
+                          className="input-field py-3 text-xs"
+                          value={endDate}
+                          onChange={e => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Your Message</label>
                       <textarea
