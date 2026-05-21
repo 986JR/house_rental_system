@@ -1,27 +1,49 @@
 spring:
   application:
     name: house_rental
+
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 12MB
+
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/house_rental}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:2050a}
+    username: ${DB_USERNAME:dominic}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
+
   jpa:
     open-in-view: false
+    show-sql: true
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
+        format_sql: true
         jdbc:
           time_zone: UTC
         default_batch_fetch_size: 32
+
   flyway:
     enabled: true
     locations: classpath:db/migration
+    repair-on-migrate: true
+    # Added baseline configurations to force startup matching on non-empty schema public
+    baseline-on-migrate: true
+    baseline-version: "0"
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nazarethdominic189@gmail.com
+    password: ${MAIL_PASSWORD:ugyvgfnypfvlglos}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: ${SERVER_PORT:8080}
@@ -33,11 +55,20 @@ app:
     secret: ${JWT_SECRET:6e6082f88351504749d1537f7d10b9ee51018f33bb1e0a58c0ad768490784112}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   uploads:
-    dir: ${UPLOADS_DIR:./house_rental_uploads}
+    dir: ${UPLOAD_DIR:./house_rental_uploads}
   cloudinary:
-    cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-storage-bucket}
-    api-key: ${CLOUDINARY_API_KEY:839482175928471}
-    api-secret: ${CLOUDINARY_API_SECRET:aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0u}
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:dp2sofb5n}
+    api-key: ${CLOUDINARY_API_KEY:116679892943646}
+    api-secret: ${CLOUDINARY_API_SECRET:jEFtAjdjdbJ2QexABpJWW9h5U2Y}
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        orm:
+          jdbc:
+            bind: TRACE
 
 ---
 spring:
@@ -45,4 +76,4 @@ spring:
     activate:
       on-profile: dev
   jpa:
-    show-sql: false
+    show-sql: true

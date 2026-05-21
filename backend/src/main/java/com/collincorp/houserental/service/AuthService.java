@@ -3,11 +3,7 @@ package com.collincorp.houserental.service;
 import com.collincorp.houserental.api.ApiException;
 import com.collincorp.houserental.domain.LogAction;
 import com.collincorp.houserental.domain.UserRole;
-import com.collincorp.houserental.dto.LoginRequest;
-import com.collincorp.houserental.dto.ProfileUpdateRequest;
-import com.collincorp.houserental.dto.RegisterRequest;
-import com.collincorp.houserental.dto.TokenResponse;
-import com.collincorp.houserental.dto.UserResponse;
+import com.collincorp.houserental.dto.*;
 import com.collincorp.houserental.entity.UserEntity;
 import com.collincorp.houserental.repository.UserRepository;
 import com.collincorp.houserental.security.JwtService;
@@ -32,28 +28,42 @@ public class AuthService {
         this.logService = logService;
     }
 
+    @Transactional(readOnly = true)
+    public boolean isEmailTaken(String email) {
+        return userRepository.existsByEmailIgnoreCase(email);
+    }
+
+    // Executed ONLY when OTP verification passes successfully
     @Transactional
-    public UserResponse register(RegisterRequest req) {
+    public UserResponse completeRegistration(RegisterRequest req) {
         if (userRepository.existsByEmailIgnoreCase(req.email())) {
             throw new ApiException(HttpStatus.CONFLICT, "email_taken");
         }
+
         UserRole role = req.role() != null ? req.role() : UserRole.tenant;
         if (role == UserRole.admin) {
             role = UserRole.tenant;
         }
+
         UserEntity u = new UserEntity();
         u.setEmail(req.email().trim().toLowerCase());
         u.setPasswordHash(passwordEncoder.encode(req.password()));
         u.setFullName(req.fullName());
         u.setRole(role);
+        u.setActive(true); // Explicitly mark active since email is verified via OTP
+
         userRepository.save(u);
-        logService.log(LogAction.USER_CREATED, "user", u.getId(), u.getId(), u.getEmail(), "User registered successfully");
+
+        // Retained Audit Logging from Code A
+        logService.log(LogAction.USER_CREATED, "user", u.getId(), u.getId(), u.getEmail(), "User registered successfully via OTP");
+
         return toUser(u);
     }
 
     @Transactional
     public TokenResponse login(LoginRequest req) {
         String email = req.email().trim().toLowerCase();
+
         UserEntity u = userRepository.findByEmailIgnoreCase(email).orElse(null);
         if (u == null) {
             logService.log(LogAction.LOGIN, "user", null, null, email, "Failed login attempt: user not found");
@@ -67,8 +77,10 @@ public class AuthService {
             logService.log(LogAction.LOGIN, "user", u.getId(), u.getId(), u.getEmail(), "Failed login attempt: incorrect password");
             throw new ApiException(HttpStatus.UNAUTHORIZED, "invalid_credentials");
         }
+
         String token = jwtService.generateToken(u.getId(), u.getEmail(), u.getRole().name());
         logService.log(LogAction.LOGIN, "user", u.getId(), u.getId(), u.getEmail(), "User logged in successfully");
+
         return TokenResponse.of(token, toUser(u));
     }
 
@@ -80,18 +92,22 @@ public class AuthService {
     @Transactional
     public UserResponse updateProfile(ProfileUpdateRequest req) {
         UserEntity u = userRepository.findById(SecurityUtils.currentUser().getId()).orElseThrow();
+
         if (req.fullName() != null && !req.fullName().isBlank()) {
             u.setFullName(req.fullName());
         }
         if (req.password() != null && !req.password().isBlank()) {
             u.setPasswordHash(passwordEncoder.encode(req.password()));
         }
+
         userRepository.save(u);
         logService.log(LogAction.USER_UPDATED, "user", u.getId(), u.getId(), u.getEmail(), "User updated profile details");
+
         return toUser(u);
     }
 
     private static UserResponse toUser(UserEntity u) {
+        // Keeps the comprehensive fields from Code A to match logging requirements
         return new UserResponse(u.getId(), u.getEmail(), u.getFullName(), u.getRole().name(), u.isActive(), u.getCreatedBy());
     }
 }
