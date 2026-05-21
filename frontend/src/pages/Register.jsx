@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, User, Loader2, ArrowRight, Home, Building2, UserCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import OtpModal from '../components/OtpModal';
 
 const Register = () => {
   const [form, setForm] = useState({ email: '', password: '', fullName: '', role: 'tenant' });
   const [submitting, setSubmitting] = useState(false);
-  const { register, login } = useAuth();
+  const [showOtp, setShowOtp] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
@@ -17,8 +19,8 @@ const Register = () => {
     setSubmitting(true);
     try {
       await register(form);
-      await login(form.email, form.password);
-      navigate('/dashboard');
+      // Registration queued successfully — show OTP modal
+      setShowOtp(true);
     } catch {
       // toast handled in context
     } finally {
@@ -154,6 +156,13 @@ const Register = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* OTP Modal — rendered outside the form card, inside the page */}
+      <OtpModal
+        isOpen={showOtp}
+        email={form.email}
+        onClose={() => setShowOtp(false)}
+      />
     </div>
   );
 };

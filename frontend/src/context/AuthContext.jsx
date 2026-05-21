@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }) => {
     return errorMap[errorKey] || errorKey || 'An unexpected error occurred.';
   };
 
-  // Configure axios defaults
   axios.defaults.baseURL = import.meta.env.VITE_API_PATH_PREFIX || '/api/v1';
   const token = localStorage.getItem('token');
   if (token) {
@@ -62,10 +61,23 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       await axios.post('/auth/register', userData);
-      toast.success('Account created! You can now log in.');
+      // Do NOT login or navigate — just return so Register.jsx can show the OTP modal
       return true;
     } catch (err) {
       toast.error(getFriendlyErrorMessage(err));
+      throw err;
+    }
+  };
+
+  const verifyEmail = async (email, code) => {
+    try {
+      await axios.post('/auth/verify', { email, code });
+      toast.success('Email verified! You can now log in.');
+      return true;
+    } catch (err) {
+      const msg = err.response?.data;
+      // Backend returns plain strings for verify errors, not our error key format
+      toast.error(typeof msg === 'string' ? msg : 'Invalid code. Please try again.');
       throw err;
     }
   };
@@ -90,7 +102,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, setUser, verifyEmail }}>
       {children}
     </AuthContext.Provider>
   );
